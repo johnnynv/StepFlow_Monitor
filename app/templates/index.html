@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContainerFlow Visualizer - Dashboard</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>ContainerFlow</h1>
+                <span class="nav-subtitle">Visualizer</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-item active">Dashboard</a>
+                <a href="/execution" class="nav-item">Live Execution</a>
+                <a href="/history" class="nav-item">History</a>
+                <a href="/artifacts" class="nav-item">Artifacts</a>
+            </div>
+            <div class="nav-status">
+                <span id="connectionStatus" class="connection-status">🔴 Disconnected</span>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Quick Actions -->
+            <section class="quick-actions">
+                <h2>Quick Actions</h2>
+                <div class="action-cards">
+                    <div class="action-card">
+                        <h3>New Execution</h3>
+                        <p>Start a new script execution</p>
+                        <button onclick="showNewExecutionDialog()" class="btn btn-primary">
+                            ▶️ Start Execution
+                        </button>
+                    </div>
+                    <div class="action-card">
+                        <h3>View Live</h3>
+                        <p>Monitor active executions</p>
+                        <button onclick="goToLive()" class="btn btn-secondary">
+                            📺 Live View
+                        </button>
+                    </div>
+                    <div class="action-card">
+                        <h3>Browse History</h3>
+                        <p>View past executions</p>
+                        <button onclick="goToHistory()" class="btn btn-secondary">
+                            📜 History
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics -->
+            <section class="statistics">
+                <h2>System Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalExecutions">-</div>
+                        <div class="stat-label">Total Executions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="activeExecutions">-</div>
+                        <div class="stat-label">Active Now</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="successRate">-</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="avgDuration">-</div>
+                        <div class="stat-label">Avg Duration</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Executions -->
+            <section class="recent-executions">
+                <h2>Recent Executions</h2>
+                <div class="executions-table">
+                    <table id="recentExecutionsTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>Started</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentExecutionsBody">
+                            <tr>
+                                <td colspan="5" class="loading">Loading executions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Active Executions -->
+            <section class="active-executions" id="activeExecutionsSection" style="display: none;">
+                <h2>Active Executions</h2>
+                <div id="activeExecutionsList" class="active-list">
+                    <!-- Active executions will be populated here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- New Execution Dialog -->
+    <div id="newExecutionDialog" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Start New Execution</h3>
+                <button onclick="hideNewExecutionDialog()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newExecutionForm">
+                    <div class="form-group">
+                        <label for="executionName">Execution Name:</label>
+                        <input type="text" id="executionName" placeholder="Optional execution name">
+                    </div>
+                    <div class="form-group">
+                        <label for="command">Command:</label>
+                        <input type="text" id="command" placeholder="bash script.sh" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="workingDirectory">Working Directory:</label>
+                        <input type="text" id="workingDirectory" value="." placeholder="/path/to/directory">
+                    </div>
+                    <div class="form-group">
+                        <label for="timeout">Timeout (seconds):</label>
+                        <input type="number" id="timeout" placeholder="Optional timeout">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" onclick="hideNewExecutionDialog()" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Start Execution</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,241 +1,279 @@
-# 🐳 ContainerFlow 可视化器
+# 🐳 StepFlow Monitor
 
-## 专业的容器执行步骤可视化解决方案
+> **类似GitHub Actions的脚本执行可视化工具**
 
-**轻量级、实时的容器执行工作流监控可视化工具**
+StepFlow Monitor 通过简单的标记注入将您的脚本转换为可视化的、分步骤的工作流，提供实时监控和工件收集功能。完美适用于CI/CD管道、数据处理工作流和开发自动化。
 
-### ✨ 核心特性
+[🇺🇸 English](../README.md) | [🇨🇳 中文](README_CN.md)
 
-- **🚀 零配置**：单命令部署
-- **📱 实时可视化**：类似GitHub Actions的步骤展示
-- **🔄 实时日志**：WebSocket驱动的实时日志流
-- **🎨 响应式界面**：现代化Web界面，支持移动设备
-- **🐳 Docker友好**：完美集成Docker工作流
-- **📊 进度跟踪**：实时显示执行进度和状态
+## ✨ 核心特性
 
-## 🏗️ 架构设计
+- 🎯 **最小标记注入** - 在现有脚本中添加简单标记
+- 📊 **实时可视化** - GitHub Actions风格的步骤展示
+- 🔄 **实时日志流** - 实时观看脚本执行过程
+- 📦 **工件收集** - 自动文件收集和下载
+- 🐳 **Docker就绪** - 单容器部署
+- 🌐 **Web仪表板** - 完整的执行管理界面
+- 🔒 **企业就绪** - SSO集成支持（可配置）
 
+## 🏗️ 系统架构
+
+```mermaid
+graph TB
+    A[脚本执行] --> B[标记解析器]
+    B --> C[执行引擎]
+    C --> D[持久化层]
+    C --> E[WebSocket服务器]
+    E --> F[Web仪表板]
+    D --> G[SQLite数据库]
+    D --> H[文件存储]
 ```
-┌─────────────────┐    WebSocket    ┌─────────────────┐
-│   Python脚本    │ ◄──────────────► │   Web界面       │
-│ (步骤控制)       │                 │ (实时可视化)     │
-└─────────────────┘                 └─────────────────┘
-         │                                   │
-         │                                   │
-         ▼                                   ▼
-┌─────────────────┐    HTTP服务     ┌─────────────────┐
-│  Docker容器     │ ◄──────────────► │   浏览器        │
-│ (科学计算任务)   │                 │ (用户界面)       │
-└─────────────────┘                 └─────────────────┘
-```
+
+### 核心组件
+- **标记解析器**：检测和处理脚本标记
+- **执行引擎**：管理脚本执行和监控
+- **持久化层**：存储执行数据和工件
+- **WebSocket服务器**：提供实时更新
+- **Web仪表板**：监控和管理用户界面
 
 ## 🚀 快速开始
 
-### 方式1：直接Python运行
+### 使用Docker（推荐）
 
 ```bash
-# 1. 安装依赖
-pip install websockets
+# 拉取并运行
+docker run -d \
+  --name stepflow \
+  -p 8080:8080 \
+  -p 8765:8765 \
+  -v $(pwd)/scripts:/workspace \
+  -v $(pwd)/storage:/app/storage \
+  stepflow/monitor
 
-# 2. 运行可视化器
-python container_flow_visualizer.py
-
-# 3. 打开浏览器
-# 访问: http://localhost:8080/visualizer.html
+# 打开浏览器
+open http://localhost:8080
 ```
 
-### 方式2：Docker部署
+### 使用Docker Compose
 
 ```bash
-# 1. 生成Docker配置
-python deployment/docker_integration.py
+# 克隆仓库
+git clone https://github.com/your-org/stepflow-monitor
+cd stepflow-monitor
 
-# 2. 启动服务
-chmod +x deploy_containerflow.sh
-./deploy_containerflow.sh
+# 启动服务
+docker-compose up -d
 
-# 3. 访问界面
-# 自动打开: http://localhost:8080/visualizer.html
+# 查看日志
+docker-compose logs -f
 ```
 
-## 📋 集成指南
+## 📋 标记集成
 
-### 步骤1：添加可视化代码
+通过最小的标记改造现有脚本：
 
+### Shell脚本示例
+```bash
+#!/bin/bash
+
+echo "STEP_START:环境设置"
+pip install -r requirements.txt
+conda install tensorflow
+echo "STEP_COMPLETE:环境设置"
+
+echo "STEP_START:模型训练"  
+python train_model.py
+echo "ARTIFACT:model.pkl:训练好的模型"
+echo "ARTIFACT:training.log:训练输出"
+echo "STEP_COMPLETE:模型训练"
+
+echo "STEP_START:模型评估"
+python evaluate.py
+echo "ARTIFACT:results.json:评估结果"
+echo "STEP_COMPLETE:模型评估"
+```
+
+### Python脚本示例
 ```python
-from core import create_visualizer, add_workflow_step, start_visualization_service
-import threading
-
-# 初始化可视化器
-viz = create_visualizer(http_port=8080, websocket_port=8765)
-
-# 定义步骤
-add_workflow_step("环境配置", "配置Python和科学计算环境")
-add_workflow_step("数据下载", "下载所需的数据集")
-add_workflow_step("Jupyter执行", "运行数据分析notebook")
-add_workflow_step("测试执行", "运行pytest并生成报告")
-add_workflow_step("报告生成", "生成最终报告文件")
+print("STEP_START:数据处理")
+df = load_and_clean_data()
+df.to_csv('cleaned_data.csv')
+print("ARTIFACT:cleaned_data.csv:清理后的数据集")
+print("STEP_COMPLETE:数据处理")
 ```
 
-### 步骤2：在现有函数中添加状态更新
+### Docker构建示例
+```dockerfile
+FROM python:3.9
+RUN echo "STEP_START:基础镜像"
+RUN echo "STEP_COMPLETE:基础镜像"
 
-```python
-def your_existing_function():
-    # 开始步骤
-    start_workflow_step(0)  # 步骤索引
-    log_step_message(0, "开始环境配置...")
-    
-    try:
-        # 你的现有代码
-        setup_environment()
-        
-        # 添加进度日志
-        log_step_message(0, "安装科学计算包...")
-        install_packages()
-        
-        log_step_message(0, "配置Jupyter环境...")
-        setup_jupyter()
-        
-        # 完成步骤
-        complete_workflow_step(0, "completed")
-        log_step_message(0, "✅ 环境配置完成!", "success")
-        
-    except Exception as e:
-        complete_workflow_step(0, "failed")
-        log_step_message(0, f"❌ 配置失败: {str(e)}", "error")
+COPY requirements.txt .
+RUN echo "STEP_START:依赖安装"
+RUN pip install -r requirements.txt
+RUN echo "STEP_COMPLETE:依赖安装"
 ```
 
-### 步骤3：启动可视化服务
+## 🎯 执行方法
 
-```python
-# 在后台线程运行工作流
-workflow_thread = threading.Thread(target=your_workflow, daemon=True)
-workflow_thread.start()
-
-# 启动可视化器（主线程）
-start_visualization_service()
+### 方法1：直接执行
+```bash
+# 执行脚本并可视化
+docker exec -it stepflow python /workspace/your_script.py
 ```
 
-## 🖥️ 界面功能
+### 方法2：通过Web界面
+1. 打开 http://localhost:8080
+2. 点击"新建执行"
+3. 输入命令：`python /workspace/your_script.py`
+4. 观看实时执行过程
 
-### 📊 实时监控面板
-- **进度条**：显示整体执行进度
-- **统计信息**：当前步骤、总步骤、已完成、执行时间
-- **步骤状态**：每个步骤的详细状态和耗时
-
-### 📜 实时日志
-- **颜色分类**：信息(蓝)、成功(绿)、警告(黄)、错误(红)
-- **时间戳**：每条日志都有精确的时间戳
-- **自动滚动**：新日志自动滚动到底部
-
-### 🔄 状态指示
-- **⏳ 等待中**：等待执行
-- **🔄 运行中**：正在执行（带动画效果）
-- **✅ 已完成**：执行成功
-- **❌ 已失败**：执行失败
-
-## 📁 项目结构
-
+### 方法3：API集成
+```bash
+curl -X POST http://localhost:8080/api/executions \
+  -H "Content-Type: application/json" \
+  -d '{"command": "python /workspace/your_script.py"}'
 ```
-ContainerFlow_Visualizer/
-├── core/                           # 核心可视化模块
-│   ├── __init__.py                # 包初始化
-│   ├── visualizer.py              # 主可视化类
-│   └── api.py                     # 便捷API函数
-├── web_interface/                  # Web界面资源
-│   ├── visualizer.html            # 主HTML界面
-│   ├── styles.css                 # CSS样式
-│   └── visualizer.js              # 客户端JavaScript
-├── examples/                       # 使用示例
-│   ├── basic_integration_example.py
-│   └── workflow_integration_example.py
-├── deployment/                     # 部署工具
-│   ├── docker_integration.py      # Docker部署工具
-│   └── production_workflow_example.py
-├── docs/                          # 文档
-│   ├── README_EN.md               # 英文文档
-│   └── README_CN.md               # 中文文档
-├── container_flow_visualizer.py   # 主入口点
-└── requirements.txt               # Python依赖
-```
+
+## 📊 仪表板功能
+
+### 🏠 仪表板
+- 执行统计和概览
+- 快速操作按钮
+- 最近执行列表
+- 活跃执行监控
+
+### 📺 实时执行视图
+- 实时步骤进度
+- 实时日志流
+- 进度指示器
+- 取消执行功能
+
+### 📜 执行历史
+- 浏览所有历史执行
+- 按状态、用户、日期筛选
+- 详细执行信息
+- 日志和工件访问
+
+### 📦 工件浏览器
+- 下载生成的文件
+- 文件元数据和描述
+- 按执行分组
+- 持久化存储
 
 ## 🔧 配置选项
 
-### 端口配置
-```python
-# 自定义端口
-viz = create_visualizer(
-    http_port=8080,          # HTTP服务器端口
-    websocket_port=8765      # WebSocket端口
-)
+### 环境变量
+```bash
+# 基础配置
+STEPFLOW_STORAGE_PATH=/app/storage
+STEPFLOW_WEBSOCKET_PORT=8765
+STEPFLOW_LOG_LEVEL=INFO
+
+# 认证设置（默认禁用）
+STEPFLOW_AUTH_ENABLED=false
+STEPFLOW_AUTH_METHOD=oidc
+STEPFLOW_AUTH_OIDC_URL=https://your-oidc-provider
 ```
 
-### 日志级别
-```python
-# 不同级别的日志
-log_step_message(step_index, "普通信息", "info")      # 蓝色
-log_step_message(step_index, "成功信息", "success")   # 绿色  
-log_step_message(step_index, "警告信息", "warning")   # 黄色
-log_step_message(step_index, "错误信息", "error")     # 红色
+### Docker Compose配置
+```yaml
+services:
+  stepflow:
+    image: stepflow/monitor
+    environment:
+      - STEPFLOW_AUTH_ENABLED=false
+    volumes:
+      - ./storage:/app/storage
+      - ./scripts:/workspace
+    ports:
+      - "8080:8080"
+      - "8765:8765"
 ```
+
+## 📋 标记类型
+
+### 步骤控制标记
+- `STEP_START:步骤名称` - 标记步骤开始
+- `STEP_COMPLETE:步骤名称` - 标记步骤成功完成
+- `STEP_ERROR:错误描述` - 标记步骤失败
+
+### 工件标记
+- `ARTIFACT:文件路径:描述` - 声明生成的文件为工件
+
+### 元数据标记
+- `META:键:值` - 提供额外的步骤元数据
 
 ## 🛠️ 高级用法
 
-### 自定义步骤描述
-```python
-add_workflow_step("数据预处理", "清洗和转换原始数据集，处理缺失值")
-add_workflow_step("特征工程", "提取和选择最重要的特征变量")
-add_workflow_step("模型训练", "训练机器学习模型并调优参数")
+### 错误处理示例
+```bash
+echo "STEP_START:数据验证"
+
+if validate_data.py; then
+    echo "✅ 数据验证通过"
+    echo "STEP_COMPLETE:数据验证"
+else
+    echo "❌ 数据验证失败"
+    echo "STEP_ERROR:数据格式不正确或包含缺失值"
+    exit 1
+fi
 ```
 
-### 错误处理
+### 元数据使用
 ```python
-try:
-    risky_operation()
-    complete_workflow_step(step_index, "completed")
-except SpecificError as e:
-    log_step_message(step_index, f"特定错误: {e}", "warning")
-    complete_workflow_step(step_index, "completed")  # 继续执行
-except Exception as e:
-    log_step_message(step_index, f"严重错误: {e}", "error") 
-    complete_workflow_step(step_index, "failed")     # 停止执行
-    return False
+print("STEP_START:模型训练")
+print("META:ESTIMATED_DURATION:300")
+print("META:DESCRIPTION:训练深度学习模型")
+
+# 训练代码
+train_model()
+
+print("ARTIFACT:model.h5:训练好的模型")
+print("ARTIFACT:metrics.json:训练指标")
+print("STEP_COMPLETE:模型训练")
 ```
 
-### 进度细分
-```python
-def complex_step():
-    start_workflow_step(2)
-    
-    subtasks = ["子任务1", "子任务2", "子任务3"]
-    for i, task in enumerate(subtasks):
-        log_step_message(2, f"执行 {task}...")
-        execute_subtask(task)
-        
-        progress = ((i + 1) / len(subtasks)) * 100
-        log_step_message(2, f"进度: {progress:.0f}%")
-    
-    complete_workflow_step(2, "completed")
+### 条件执行
+```bash
+echo "STEP_START:可选优化"
+
+if [ "$ENABLE_OPTIMIZATION" = "true" ]; then
+    echo "执行模型优化..."
+    optimize_model.py
+    echo "ARTIFACT:optimized_model.pkl:优化后的模型"
+    echo "STEP_COMPLETE:可选优化"
+else
+    echo "跳过优化步骤"
+    echo "STEP_COMPLETE:可选优化"
+fi
 ```
 
 ## 🚀 部署建议
 
 ### 开发环境
 ```bash
-# 直接运行，快速迭代
-python container_flow_visualizer.py
+# 本地开发
+git clone https://github.com/your-org/stepflow-monitor
+cd stepflow-monitor
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行开发服务器
+python app/main.py
 ```
 
 ### 测试环境  
 ```bash
 # Docker单容器
-docker build -t containerflow-viz .
-docker run -p 8080:8080 -p 8765:8765 containerflow-viz
+docker build -t stepflow-monitor .
+docker run -p 8080:8080 -p 8765:8765 stepflow-monitor
 ```
 
 ### 生产环境
 ```bash
-# Docker Compose，带持久化
+# Docker Compose，带持久化和负载均衡
 docker-compose up -d
 ```
 
@@ -248,67 +286,104 @@ docker-compose up -d
 # 检查端口是否被占用
 netstat -an | grep 8765
 
-# 防火墙设置
+# 检查防火墙设置
 sudo ufw allow 8765
 ```
 
 **2. 浏览器无法访问**
 ```bash
 # 检查HTTP服务器
-curl http://localhost:8080/visualizer.html
+curl http://localhost:8080
 
-# 检查Docker端口映射
-docker ps | grep 8080
+# 检查Docker容器状态
+docker ps | grep stepflow
 ```
 
-**3. 界面不更新**
-- 刷新浏览器页面
-- 检查WebSocket连接状态
-- 查看浏览器开发者工具的控制台错误
+**3. 标记没有被识别**
+- 确保标记格式正确：`STEP_START:步骤名称`
+- 检查标记前后没有额外的字符
+- 查看容器日志：`docker logs stepflow`
 
-## 🎨 界面自定义
+**4. 工件没有显示**
+- 确保文件路径正确
+- 检查文件是否在容器的可访问路径内
+- 验证ARTIFACT标记格式：`ARTIFACT:文件路径:描述`
 
-### 修改样式
-编辑 `web_interface/styles.css`：
+## 🏗️ 企业级功能
 
-```css
-/* 自定义颜色主题 */
-.step.running { 
-    border-left-color: #your-color; 
-    background: #your-bg-color;
-}
+### SSO集成（可配置）
+- OIDC/SAML支持
+- 基于角色的访问控制
+- API密钥认证
+- 会话管理
+
+### 安全性
+- 用户隔离
+- 审计日志
+- 安全的工件存储
+- 网络策略
+
+### 可扩展性
+- 多执行引擎
+- 负载均衡
+- 数据库集群
+- 工件归档
+
+## 🛠️ 开发
+
+### 本地开发
+```bash
+# 克隆仓库
+git clone https://github.com/your-org/stepflow-monitor
+cd stepflow-monitor
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行开发服务器
+python app/main.py
 ```
 
-### 添加新功能
-扩展 `core/visualizer.py`：
+### 测试
+```bash
+# 运行测试
+pytest tests/
 
-```python
-# 自定义消息处理
-def handle_custom_message(self, message):
-    if message.type == 'custom':
-        # 处理自定义消息
-        pass
+# 运行覆盖率测试
+pytest --cov=app tests/
 ```
 
-## 📊 与其他方案对比
+## 📚 文档
 
-| 特性 | ContainerFlow | GitHub Actions | Jenkins | Tekton |
-|------|---------------|----------------|---------|--------|
-| 部署复杂度 | ⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| 学习成本 | ⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| 实时可视化 | ✅ | ✅ | ✅ | ✅ |
-| 自定义程度 | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| Docker集成 | ✅ | ✅ | ✅ | ✅ |
-| 零配置 | ✅ | ❌ | ❌ | ❌ |
+- [📖 用户指南](docs/USER_GUIDE.md) - 完整的使用说明
+- [🔧 API参考](docs/API_REFERENCE.md) - REST API文档
+- [🚀 部署指南](docs/DEPLOYMENT_GUIDE.md) - 生产环境部署
+- [💡 示例](examples/) - 脚本集成示例
+- [🏗️ 架构](ARCHITECTURE.md) - 技术架构详情
 
 ## 🤝 贡献
 
-欢迎提交Issue和Pull Request来改进这个方案！
+1. Fork 仓库
+2. 创建功能分支
+3. 为新功能添加测试
+4. 确保所有测试通过
+5. 提交 Pull Request
 
 ## 📄 许可证
 
-MIT License - 可自由使用和修改。
+MIT License - 详见 [LICENSE](LICENSE) 文件。
+
+## 🙋 支持
+
+- 📖 **文档**: [docs/](docs/)
+- 🐛 **问题**: [GitHub Issues](https://github.com/your-org/stepflow-monitor/issues)
+- 💬 **讨论**: [GitHub Discussions](https://github.com/your-org/stepflow-monitor/discussions)
+- 📧 **邮箱**: support@stepflow.dev
+
+## 🌟 Star历史
+
+如果这个项目对您有帮助，请给我们一个 ⭐！
 
 ---
 
-**🎉 现在你可以像GitHub Actions一样监控你的容器执行过程了！**
+**StepFlow Monitor** - 让脚本执行过程更清晰，一步一个脚印。

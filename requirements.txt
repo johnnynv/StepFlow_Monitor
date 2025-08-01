@@ -1,2 +1,17 @@
-websockets==11.0.3
-asyncio
+# ContainerFlow Visualizer Dependencies
+asyncio==3.4.3
+aiosqlite==0.20.0
+websockets==12.0
+psutil==5.9.6
+pathlib==1.0.1
+python-dotenv==1.0.0
+
+# Development dependencies (optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+black==23.11.0
+flake8==6.1.0
+
+# Production server (optional)
+uvicorn==0.24.0
+gunicorn==21.2.0

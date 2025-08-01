@@ -1,344 +1,271 @@
 # 🐳 ContainerFlow Visualizer
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/your-repo/containerflow-visualizer)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.7+-brightgreen.svg)](https://python.org)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://docker.com)
+> **GitHub Actions-style visualization for any script execution**
 
-## Professional Container Execution Workflow Visualization
+ContainerFlow Visualizer transforms your scripts into visual, step-by-step workflows with real-time monitoring and artifact collection. Perfect for CI/CD pipelines, data processing workflows, and development automation.
 
-A lightweight, real-time visualization tool for monitoring container execution workflows with GitHub Actions-style interface.
+[🇺🇸 English](README.md) | [🇨🇳 中文](docs/README_CN.md)
 
-[🇺🇸 English](docs/README_EN.md) | [🇨🇳 中文](docs/README_CN.md)
+## ✨ Features
 
-## ✨ Key Features
-
-- **🚀 Zero Configuration**: Single command deployment
-- **📱 Real-time Visualization**: GitHub Actions-style step monitoring  
-- **🔄 Live WebSocket Streaming**: Real-time log updates
-- **🎨 Modern Responsive UI**: Works on desktop and mobile
-- **🐳 Docker Native**: Perfect Docker workflow integration
-- **📊 Progress Tracking**: Real-time execution monitoring
-- **🏗️ Modular Architecture**: Separated concerns for maintainability
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    WebSocket    ┌─────────────────┐
-│   Python Script │ ◄──────────────► │   Web Interface │
-│ (Step Control)   │                 │ (Visualization) │
-└─────────────────┘                 └─────────────────┘
-         │                                   │
-         │                                   │
-         ▼                                   ▼
-┌─────────────────┐    HTTP Service ┌─────────────────┐
-│  Docker Container│ ◄──────────────► │   Browser       │
-│ (Computing Tasks)│                 │ (User Interface)│
-└─────────────────┘                 └─────────────────┘
-```
+- 🎯 **Minimal Marker Injection** - Add simple markers to existing scripts
+- 📊 **Real-time Visualization** - GitHub Actions-style step display
+- 🔄 **Live Log Streaming** - Watch your scripts execute in real-time
+- 📦 **Artifact Collection** - Automatic file collection and download
+- 🐳 **Docker Ready** - Single container deployment
+- 🌐 **Web Dashboard** - Complete execution management interface
+- 🔒 **Enterprise Ready** - SSO integration points (configurable)
 
 ## 🚀 Quick Start
 
-### Method 1: Direct Python Execution
+### Using Docker (Recommended)
 
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
+# Pull and run
+docker run -d \
+  --name containerflow \
+  -p 8080:8080 \
+  -p 8765:8765 \
+  -v $(pwd)/scripts:/workspace \
+  -v $(pwd)/storage:/app/storage \
+  containerflow/visualizer
 
-# 2. Run the visualizer
-python container_flow_visualizer.py
-
-# 3. Open browser
-# Visit: http://localhost:8080/visualizer.html
+# Open browser
+open http://localhost:8080
 ```
 
-### Method 2: Docker Deployment
+### Using Docker Compose
 
 ```bash
-# 1. Generate Docker configuration
-python deployment/docker_integration.py
+# Clone repository
+git clone https://github.com/your-org/containerflow-visualizer
+cd containerflow-visualizer
 
-# 2. Start services
-chmod +x deploy_containerflow.sh
-./deploy_containerflow.sh
-
-# 3. Access interface
-# Auto-opens: http://localhost:8080/visualizer.html
-```
-
-### Method 3: Integration Example
-
-```bash
-# Run a comprehensive workflow example
-python examples/workflow_integration_example.py
-
-# Or run basic integration
-python examples/basic_integration_example.py
-```
-
-## 📋 Integration Guide
-
-### Step 1: Add Visualization Code
-
-```python
-from core import create_visualizer, add_workflow_step, start_visualization_service
-import threading
-
-# Initialize visualizer
-viz = create_visualizer(http_port=8080, websocket_port=8765)
-
-# Define steps
-add_workflow_step("Environment Setup", "Configure Python and scientific computing environment")
-add_workflow_step("Data Download", "Download required datasets")
-add_workflow_step("Jupyter Execution", "Run data analysis notebook")
-add_workflow_step("Test Execution", "Run pytest and generate reports")
-add_workflow_step("Report Generation", "Generate final report files")
-```
-
-### Step 2: Add Status Updates to Existing Functions
-
-```python
-def your_existing_function():
-    # Start step
-    start_workflow_step(0)  # Step index
-    log_step_message(0, "Starting environment setup...")
-    
-    try:
-        # Your existing code
-        setup_environment()
-        
-        # Add progress logs
-        log_step_message(0, "Installing scientific packages...")
-        install_packages()
-        
-        log_step_message(0, "Configuring Jupyter environment...")
-        setup_jupyter()
-        
-        # Complete step
-        complete_workflow_step(0, "completed")
-        log_step_message(0, "✅ Environment setup completed!", "success")
-        
-    except Exception as e:
-        complete_workflow_step(0, "failed")
-        log_step_message(0, f"❌ Setup failed: {str(e)}", "error")
-```
-
-### Step 3: Start Visualization Service
-
-```python
-# Run workflow in background thread
-workflow_thread = threading.Thread(target=your_workflow, daemon=True)
-workflow_thread.start()
-
-# Start visualizer (main thread)
-start_visualization_service()
-```
-
-## 🖥️ Interface Features
-
-### 📊 Real-time Monitoring Panel
-- **Progress Bar**: Shows overall execution progress
-- **Statistics**: Current step, total steps, completed, execution time
-- **Step Status**: Detailed status and duration for each step
-
-### 📜 Real-time Logs
-- **Color Coding**: info(blue), success(green), warning(yellow), error(red)
-- **Timestamps**: Precise timestamp for each log entry
-- **Auto-scroll**: New logs automatically scroll to bottom
-- **Search Filter**: (future feature)
-
-### 🔄 Status Indicators
-- **⏳ Pending**: Waiting for execution
-- **🔄 Running**: Currently executing (with animation)
-- **✅ Completed**: Successfully finished
-- **❌ Failed**: Execution failed
-
-## 📁 Project Structure
-
-```
-ContainerFlow_Visualizer/
-├── core/                           # Core visualization modules
-│   ├── __init__.py                # Package initialization  
-│   ├── visualizer.py              # Main ContainerFlowVisualizer class
-│   └── api.py                     # Convenience API functions
-├── web_interface/                  # Separated web interface
-│   ├── visualizer.html            # Main HTML interface
-│   ├── styles.css                 # CSS styling
-│   └── visualizer.js              # Client-side JavaScript
-├── examples/                       # Usage examples and demos
-│   ├── basic_integration_example.py
-│   └── workflow_integration_example.py  
-├── deployment/                     # Deployment and Docker tools
-│   ├── docker_integration.py      # Docker deployment utilities
-│   └── production_workflow_example.py
-├── docs/                          # Comprehensive documentation
-│   ├── README_EN.md               # English documentation
-│   ├── README_CN.md               # Chinese documentation  
-│   ├── API_REFERENCE.md           # API documentation
-│   ├── DEPLOYMENT_GUIDE.md        # Deployment guide
-│   └── EXAMPLES_GUIDE.md          # Examples and tutorials
-├── container_flow_visualizer.py   # Main entry point
-├── requirements.txt               # Python dependencies
-└── README.md                      # Project overview
-```
-
-## 🔧 Configuration Options
-
-### Port Configuration
-```python
-# Custom ports
-viz = create_visualizer(
-    http_port=8080,          # HTTP server port
-    websocket_port=8765      # WebSocket port
-)
-```
-
-### Log Levels
-```python
-# Different log levels
-log_step_message(step_index, "Normal info", "info")      # Blue
-log_step_message(step_index, "Success info", "success")  # Green  
-log_step_message(step_index, "Warning info", "warning")  # Yellow
-log_step_message(step_index, "Error info", "error")      # Red
-```
-
-## 🛠️ Advanced Usage
-
-### Custom Step Descriptions
-```python
-add_workflow_step("Data Preprocessing", "Clean and transform raw datasets, handle missing values")
-add_workflow_step("Feature Engineering", "Extract and select the most important feature variables")
-add_workflow_step("Model Training", "Train machine learning models and optimize parameters")
-```
-
-### Error Handling
-```python
-try:
-    risky_operation()
-    complete_workflow_step(step_index, "completed")
-except SpecificError as e:
-    log_step_message(step_index, f"Specific error: {e}", "warning")
-    complete_workflow_step(step_index, "completed")  # Continue execution
-except Exception as e:
-    log_step_message(step_index, f"Critical error: {e}", "error") 
-    complete_workflow_step(step_index, "failed")     # Stop execution
-    return False
-```
-
-### Progress Breakdown
-```python
-def complex_step():
-    start_workflow_step(2)
-    
-    subtasks = ["Subtask 1", "Subtask 2", "Subtask 3"]
-    for i, task in enumerate(subtasks):
-        log_step_message(2, f"Executing {task}...")
-        execute_subtask(task)
-        
-        progress = ((i + 1) / len(subtasks)) * 100
-        log_step_message(2, f"Progress: {progress:.0f}%")
-    
-    complete_workflow_step(2, "completed")
-```
-
-## 🚀 Deployment Recommendations
-
-### Development Environment
-```bash
-# Direct execution for rapid iteration
-python container_flow_visualizer.py
-```
-
-### Testing Environment  
-```bash
-# Single Docker container
-docker build -t containerflow-viz .
-docker run -p 8080:8080 -p 8765:8765 containerflow-viz
-```
-
-### Production Environment
-```bash
-# Docker Compose with persistence
+# Start services
 docker-compose up -d
+
+# View logs
+docker-compose logs -f
 ```
 
-## 🔍 Troubleshooting
+## 📋 Marker Integration
 
-### Common Issues
+Transform any script with minimal markers:
 
-**1. WebSocket Connection Failed**
+### Shell Script Example
 ```bash
-# Check if port is in use
-netstat -an | grep 8765
+#!/bin/bash
 
-# Configure firewall
-sudo ufw allow 8765
+echo "STEP_START:Environment Setup"
+pip install -r requirements.txt
+conda install tensorflow
+echo "STEP_COMPLETE:Environment Setup"
+
+echo "STEP_START:Model Training"  
+python train_model.py
+echo "ARTIFACT:model.pkl:Trained Model"
+echo "ARTIFACT:training.log:Training Output"
+echo "STEP_COMPLETE:Model Training"
+
+echo "STEP_START:Model Evaluation"
+python evaluate.py
+echo "ARTIFACT:results.json:Evaluation Results"
+echo "STEP_COMPLETE:Model Evaluation"
 ```
 
-**2. Browser Cannot Access**
-```bash
-# Check HTTP server
-curl http://localhost:8080/visualizer.html
-
-# Check Docker port mapping
-docker ps | grep 8080
-```
-
-**3. Interface Not Updating**
-- Refresh browser page
-- Check WebSocket connection status
-- Review browser developer console for errors
-
-## 🎨 Interface Customization
-
-### Modify Styles
-Edit CSS styles in `web_interface/styles.css`:
-
-```css
-/* Custom color theme */
-.step.running { 
-    border-left-color: #your-color; 
-    background: #your-bg-color;
-}
-```
-
-### Add New Features
+### Python Script Example
 ```python
-# Custom message handling
-def handle_custom_message(self, message):
-    if message.type == 'custom':
-        # Handle custom message
-        pass
+print("STEP_START:Data Processing")
+df = load_and_clean_data()
+df.to_csv('cleaned_data.csv')
+print("ARTIFACT:cleaned_data.csv:Cleaned Dataset")
+print("STEP_COMPLETE:Data Processing")
 ```
 
-## 📊 Comparison with Other Solutions
+### Docker Build Example
+```dockerfile
+FROM python:3.9
+RUN echo "STEP_START:Base Image"
+RUN echo "STEP_COMPLETE:Base Image"
 
-| Feature | ContainerFlow | GitHub Actions | Jenkins | Tekton |
-|---------|---------------|----------------|---------|--------|
-| Deployment Complexity | ⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| Learning Curve | ⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| Real-time Visualization | ✅ | ✅ | ✅ | ✅ |
-| Customization Level | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| Docker Integration | ✅ | ✅ | ✅ | ✅ |
-| Zero Configuration | ✅ | ❌ | ❌ | ❌ |
-| Modular Architecture | ✅ | ❌ | ⭐⭐ | ⭐⭐⭐ |
+COPY requirements.txt .
+RUN echo "STEP_START:Dependencies"
+RUN pip install -r requirements.txt
+RUN echo "STEP_COMPLETE:Dependencies"
+```
+
+## 🎯 Execution Methods
+
+### Method 1: Direct Execution
+```bash
+# Execute script with visualization
+docker exec -it containerflow python /workspace/your_script.py
+```
+
+### Method 2: Via Web Interface
+1. Open http://localhost:8080
+2. Click "New Execution"
+3. Enter command: `python /workspace/your_script.py`
+4. Watch real-time execution
+
+### Method 3: API Integration
+```bash
+curl -X POST http://localhost:8080/api/executions \
+  -H "Content-Type: application/json" \
+  -d '{"command": "python /workspace/your_script.py"}'
+```
+
+## 📊 Dashboard Features
+
+### 🏠 Dashboard
+- Execution statistics and overview
+- Quick action buttons
+- Recent executions list
+- Active execution monitoring
+
+### 📺 Live Execution View
+- Real-time step progress
+- Live log streaming
+- Progress indicators
+- Cancel execution capability
+
+### 📜 Execution History
+- Browse all past executions
+- Filter by status, user, date
+- Detailed execution information
+- Log and artifact access
+
+### 📦 Artifact Browser
+- Download generated files
+- File metadata and descriptions
+- Organized by execution
+- Persistent storage
+
+## 🔧 Configuration
+
+### Environment Variables
+```bash
+# Basic configuration
+CONTAINERFLOW_STORAGE_PATH=/app/storage
+CONTAINERFLOW_WEBSOCKET_PORT=8765
+CONTAINERFLOW_LOG_LEVEL=INFO
+
+# Authentication (disabled by default)
+CONTAINERFLOW_AUTH_ENABLED=false
+CONTAINERFLOW_AUTH_METHOD=oidc
+CONTAINERFLOW_AUTH_OIDC_URL=https://your-oidc-provider
+```
+
+### Docker Compose Configuration
+```yaml
+services:
+  containerflow:
+    image: containerflow/visualizer
+    environment:
+      - CONTAINERFLOW_AUTH_ENABLED=false
+    volumes:
+      - ./storage:/app/storage
+      - ./scripts:/workspace
+    ports:
+      - "8080:8080"
+      - "8765:8765"
+```
+
+## 🏗️ Architecture
+
+```mermaid
+graph TB
+    A[Script Execution] --> B[Marker Parser]
+    B --> C[Execution Engine]
+    C --> D[Persistence Layer]
+    C --> E[WebSocket Server]
+    E --> F[Web Dashboard]
+    D --> G[SQLite DB]
+    D --> H[File Storage]
+```
+
+### Core Components
+- **Marker Parser**: Detects and processes script markers
+- **Execution Engine**: Manages script execution and monitoring
+- **Persistence Layer**: Stores execution data and artifacts
+- **WebSocket Server**: Provides real-time updates
+- **Web Dashboard**: User interface for monitoring and management
 
 ## 📚 Documentation
 
-- **[📖 API Reference](docs/API_REFERENCE.md)** - Complete API documentation
-- **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Production deployment guide  
-- **[💡 Examples Guide](docs/EXAMPLES_GUIDE.md)** - Comprehensive examples
-- **[🇺🇸 English Docs](docs/README_EN.md)** - Full English documentation
-- **[🇨🇳 中文文档](docs/README_CN.md)** - Complete Chinese documentation
+- [📖 User Guide](docs/USER_GUIDE.md) - Complete usage instructions
+- [🔧 API Reference](docs/API_REFERENCE.md) - REST API documentation
+- [🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md) - Production deployment
+- [💡 Examples](examples/) - Script integration examples
+- [🏗️ Architecture](ARCHITECTURE.md) - Technical architecture details
+
+## 🔒 Enterprise Features
+
+### SSO Integration (Configurable)
+- OIDC/SAML support
+- Role-based access control
+- API key authentication
+- Session management
+
+### Security
+- User isolation
+- Audit logging
+- Secure artifact storage
+- Network policies
+
+### Scalability
+- Multiple execution engines
+- Load balancing
+- Database clustering
+- Artifact archiving
+
+## 🛠️ Development
+
+### Local Development
+```bash
+# Clone repository
+git clone https://github.com/your-org/containerflow-visualizer
+cd containerflow-visualizer
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run development server
+python app/main.py
+```
+
+### Testing
+```bash
+# Run tests
+pytest tests/
+
+# Run with coverage
+pytest --cov=app tests/
+```
 
 ## 🤝 Contributing
 
-Welcome to submit Issues and Pull Requests to improve this solution!
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
 
 ## 📄 License
 
-MIT License - Free to use and modify.
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🙋 Support
+
+- 📖 **Documentation**: [docs/](docs/)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/your-org/containerflow-visualizer/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/your-org/containerflow-visualizer/discussions)
+- 📧 **Email**: support@containerflow.dev
+
+## 🌟 Star History
+
+Give us a ⭐ if this project helped you!
 
 ---
 
-**🎉 Now you can monitor your container execution processes just like GitHub Actions!**
+**ContainerFlow Visualizer** - Bringing clarity to script execution, one step at a time.
