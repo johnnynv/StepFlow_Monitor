@@ -1,7 +1,15 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[codz]
+*.py[cod]
 *$py.class
+
+# Demo and test files (cleaned up)
+*demo*.py
+*test*.py
+tutorial*.py
+*_demo.*
+*_test.*
+UPDATES_SUMMARY.md
 
 # C extensions
 *.so

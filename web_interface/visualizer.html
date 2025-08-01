@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContainerFlow Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐳 ContainerFlow Visualizer</h1>
+            <p>Professional real-time monitoring of container execution workflows</p>
+        </div>
+        
+        <!-- Simplified Execution Progress -->
+        <div class="status-bar">
+            <div class="status-header">
+                <h3>Execution Progress</h3>
+                <div class="connection-status" id="connectionStatus">🔌 Connecting...</div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="progress-info-compact">
+                <span id="progressText">0/0</span>
+                <span class="separator">•</span>
+                <span>Elapsed: <span id="elapsedTime">00:00</span></span>
+            </div>
+        </div>
+        
+        <!-- GitHub Actions Style Steps -->
+        <div class="execution-section">
+            <div class="section-header">
+                <h3>📋 Execution Steps</h3>
+            </div>
+            <div id="stepsContainer" class="steps-container"></div>
+        </div>
+        
+        <!-- File Downloads Section -->
+        <div id="downloadsSection" class="downloads-section" style="display: none;">
+            <div class="section-header">
+                <h3>📥 Generated Files</h3>
+            </div>
+            <div id="downloadsList" class="downloads-list"></div>
+        </div>
+    </div>
+
+    <script src="visualizer.js"></script>
+    <script>
+        function toggleStepOutput(stepIndex) {
+            const outputDiv = document.getElementById(`stepOutput${stepIndex}`);
+            const toggleIcon = document.getElementById(`toggleIcon${stepIndex}`);
+            
+            if (outputDiv.style.display === 'none') {
+                outputDiv.style.display = 'block';
+                toggleIcon.textContent = '▼';
+            } else {
+                outputDiv.style.display = 'none';
+                toggleIcon.textContent = '▶';
+            }
+        }
+    </script>
+</body>
+</html>
