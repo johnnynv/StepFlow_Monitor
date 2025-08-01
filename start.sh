@@ -1,9 +1,9 @@
 #!/bin/bash
-# ContainerFlow Visualizer Quick Start Script
+# StepFlow Monitor Quick Start Script
 
 set -e
 
-echo "🐳 ContainerFlow Visualizer - Quick Start"
+echo "🔍 StepFlow Monitor - Quick Start"
 echo "========================================="
 
 # Check if Docker is running
@@ -30,11 +30,11 @@ mkdir -p "$STORAGE_DIR"/{executions,artifacts,database}
 mkdir -p "$SCRIPTS_DIR"
 
 # Check if container is already running
-if docker ps --format "table {{.Names}}" | grep -q "containerflow"; then
-    echo "⚠️  ContainerFlow is already running."
-    echo "   To restart: docker restart containerflow"
-    echo "   To stop: docker stop containerflow"
-    echo "   To view logs: docker logs -f containerflow"
+if docker ps --format "table {{.Names}}" | grep -q "stepflow"; then
+    echo "⚠️  StepFlow Monitor is already running."
+    echo "   To restart: docker restart stepflow"
+    echo "   To stop: docker stop stepflow"
+    echo "   To view logs: docker logs -f stepflow"
     echo ""
     echo "🌐 Access at: http://localhost:$HTTP_PORT"
     exit 0
@@ -42,32 +42,32 @@ fi
 
 # Build or pull image
 if [ "$1" = "--build" ]; then
-    echo "🔨 Building ContainerFlow image..."
-    docker build -t containerflow/visualizer .
+    echo "🔨 Building StepFlow Monitor image..."
+    docker build -t stepflow/monitor .
 else
-    echo "📥 Pulling ContainerFlow image..."
-    # docker pull containerflow/visualizer
+    echo "📥 Pulling StepFlow Monitor image..."
+    # docker pull stepflow/monitor
     # For now, build locally since image is not published
-    echo "🔨 Building ContainerFlow image locally..."
-    docker build -t containerflow/visualizer .
+    echo "🔨 Building StepFlow Monitor image locally..."
+    docker build -t stepflow/monitor .
 fi
 
 echo ""
-echo "🚀 Starting ContainerFlow Visualizer..."
+echo "🚀 Starting StepFlow Monitor Visualizer..."
 
 # Run container
 docker run -d \
-    --name containerflow \
+    --name stepflow \
     -p "$HTTP_PORT:8080" \
     -p "$WS_PORT:8765" \
     -v "$STORAGE_DIR:/app/storage" \
     -v "$SCRIPTS_DIR:/workspace" \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -e PYTHONUNBUFFERED=1 \
-    -e CONTAINERFLOW_LOG_LEVEL=INFO \
-    -e CONTAINERFLOW_AUTH_ENABLED=false \
+    -e STEPFLOW_LOG_LEVEL=INFO \
+    -e STEPFLOW_AUTH_ENABLED=false \
     --restart unless-stopped \
-    containerflow/visualizer
+    stepflow/monitor
 
 # Wait for container to start
 echo "⏳ Waiting for service to start..."
@@ -75,7 +75,7 @@ sleep 5
 
 # Health check
 if curl -f -s "http://localhost:$HTTP_PORT/api/health" > /dev/null; then
-    echo "✅ ContainerFlow Visualizer is running!"
+    echo "✅ StepFlow Monitor Visualizer is running!"
     echo ""
     echo "🌐 Dashboard: http://localhost:$HTTP_PORT"
     echo "🔗 WebSocket: ws://localhost:$WS_PORT"
@@ -83,10 +83,10 @@ if curl -f -s "http://localhost:$HTTP_PORT/api/health" > /dev/null; then
     echo "📂 Scripts: $SCRIPTS_DIR"
     echo ""
     echo "📋 Quick Commands:"
-    echo "   View logs: docker logs -f containerflow"
-    echo "   Stop: docker stop containerflow"
-    echo "   Restart: docker restart containerflow"
-    echo "   Remove: docker rm -f containerflow"
+    echo "   View logs: docker logs -f stepflow"
+    echo "   Stop: docker stop stepflow"
+    echo "   Restart: docker restart stepflow"
+    echo "   Remove: docker rm -f stepflow"
     echo ""
     echo "📚 Try the examples:"
     echo "   1. Open http://localhost:$HTTP_PORT"
@@ -94,7 +94,7 @@ if curl -f -s "http://localhost:$HTTP_PORT/api/health" > /dev/null; then
     echo "   3. Run: bash /workspace/shell_example.sh"
     echo "   4. Watch the real-time visualization!"
 else
-    echo "❌ Failed to start ContainerFlow Visualizer"
-    echo "📋 Check logs: docker logs containerflow"
+    echo "❌ Failed to start StepFlow Monitor Visualizer"
+    echo "📋 Check logs: docker logs stepflow"
     exit 1
 fi

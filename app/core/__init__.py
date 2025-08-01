@@ -1,5 +1,5 @@
 """
-Core business logic for ContainerFlow Visualizer
+Core business logic for StepFlow Monitor
 """
 
 from .marker_parser import MarkerParser, MarkerType

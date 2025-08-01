@@ -232,10 +232,10 @@ class MarkerParser:
         """Get markdown documentation for marker usage"""
         examples = self.get_marker_examples()
         
-        doc = """# ContainerFlow Marker Reference
+        doc = """# StepFlow Monitor Marker Reference
 
 ## Overview
-ContainerFlow uses standardized markers to detect steps and collect artifacts from your scripts.
+StepFlow Monitor uses standardized markers to detect steps and collect artifacts from your scripts.
 
 ## Marker Types
 

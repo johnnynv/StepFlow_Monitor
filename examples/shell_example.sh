@@ -1,5 +1,5 @@
 #!/bin/bash
-# ContainerFlow Marker Injection Example - Shell Script
+# StepFlow Monitor Marker Injection Example - Shell Script
 # This script demonstrates how to add minimal markers for step visualization
 
 echo "STEP_START:Environment Setup"

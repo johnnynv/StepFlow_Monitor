@@ -1,8 +1,8 @@
-# 🐳 ContainerFlow Visualizer
+# 🔍 StepFlow Monitor
 
 > **GitHub Actions-style visualization for any script execution**
 
-ContainerFlow Visualizer transforms your scripts into visual, step-by-step workflows with real-time monitoring and artifact collection. Perfect for CI/CD pipelines, data processing workflows, and development automation.
+StepFlow Monitor transforms your scripts into visual, step-by-step workflows with real-time monitoring and artifact collection. Perfect for CI/CD pipelines, data processing workflows, and development automation.
 
 [🇺🇸 English](README.md) | [🇨🇳 中文](docs/README_CN.md)
 
@@ -23,12 +23,12 @@ ContainerFlow Visualizer transforms your scripts into visual, step-by-step workf
 ```bash
 # Pull and run
 docker run -d \
-  --name containerflow \
+  --name stepflow \
   -p 8080:8080 \
   -p 8765:8765 \
   -v $(pwd)/scripts:/workspace \
   -v $(pwd)/storage:/app/storage \
-  containerflow/visualizer
+  stepflow/monitor
 
 # Open browser
 open http://localhost:8080
@@ -38,8 +38,8 @@ open http://localhost:8080
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/containerflow-visualizer
-cd containerflow-visualizer
+git clone https://github.com/your-org/stepflow-monitor
+cd stepflow-monitor
 
 # Start services
 docker-compose up -d
@@ -99,7 +99,7 @@ RUN echo "STEP_COMPLETE:Dependencies"
 ### Method 1: Direct Execution
 ```bash
 # Execute script with visualization
-docker exec -it containerflow python /workspace/your_script.py
+docker exec -it stepflow python /workspace/your_script.py
 ```
 
 ### Method 2: Via Web Interface
@@ -146,23 +146,23 @@ curl -X POST http://localhost:8080/api/executions \
 ### Environment Variables
 ```bash
 # Basic configuration
-CONTAINERFLOW_STORAGE_PATH=/app/storage
-CONTAINERFLOW_WEBSOCKET_PORT=8765
-CONTAINERFLOW_LOG_LEVEL=INFO
+STEPFLOW_STORAGE_PATH=/app/storage
+STEPFLOW_WEBSOCKET_PORT=8765
+STEPFLOW_LOG_LEVEL=INFO
 
 # Authentication (disabled by default)
-CONTAINERFLOW_AUTH_ENABLED=false
-CONTAINERFLOW_AUTH_METHOD=oidc
-CONTAINERFLOW_AUTH_OIDC_URL=https://your-oidc-provider
+STEPFLOW_AUTH_ENABLED=false
+STEPFLOW_AUTH_METHOD=oidc
+STEPFLOW_AUTH_OIDC_URL=https://your-oidc-provider
 ```
 
 ### Docker Compose Configuration
 ```yaml
 services:
-  containerflow:
-    image: containerflow/visualizer
+  stepflow:
+    image: stepflow/monitor
     environment:
-      - CONTAINERFLOW_AUTH_ENABLED=false
+      - STEPFLOW_AUTH_ENABLED=false
     volumes:
       - ./storage:/app/storage
       - ./scripts:/workspace
@@ -224,8 +224,8 @@ graph TB
 ### Local Development
 ```bash
 # Clone repository
-git clone https://github.com/your-org/containerflow-visualizer
-cd containerflow-visualizer
+git clone https://github.com/your-org/stepflow-monitor
+cd stepflow-monitor
 
 # Install dependencies
 pip install -r requirements.txt
@@ -258,9 +258,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## 🙋 Support
 
 - 📖 **Documentation**: [docs/](docs/)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/your-org/containerflow-visualizer/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/your-org/containerflow-visualizer/discussions)
-- 📧 **Email**: support@containerflow.dev
+- 🐛 **Issues**: [GitHub Issues](https://github.com/your-org/stepflow-monitor/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/your-org/stepflow-monitor/discussions)
+- 📧 **Email**: support@stepflow.dev
 
 ## 🌟 Star History
 
@@ -268,4 +268,4 @@ Give us a ⭐ if this project helped you!
 
 ---
 
-**ContainerFlow Visualizer** - Bringing clarity to script execution, one step at a time.
+**StepFlow Monitor Visualizer** - Bringing clarity to script execution, one step at a time.

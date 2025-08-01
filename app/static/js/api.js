@@ -1,5 +1,5 @@
 /**
- * API client for ContainerFlow Visualizer
+ * API client for StepFlow Monitor
  */
 
 class APIClient {
@@ -159,7 +159,7 @@ const API = {
     async loadStatistics() {
         try {
             const response = await apiClient.getExecutionStatistics();
-            return response.statistics || {};
+            return response || {};
         } catch (error) {
             console.error('Failed to load statistics:', error);
             return {};
@@ -201,7 +201,7 @@ const API = {
     // Method aliases for new pages
     async getExecutions(limit = 10) {
         try {
-            const response = await apiClient.getExecutions(limit);
+            const response = await apiClient.getExecutions({ limit: limit });
             return response;
         } catch (error) {
             console.error('Failed to load executions:', error);

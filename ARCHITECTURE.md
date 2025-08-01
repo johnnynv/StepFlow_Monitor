@@ -1,4 +1,4 @@
-# 🏗️ ContainerFlow Visualizer - Marker Injection Architecture
+# 🏗️ StepFlow Monitor - Marker Injection Architecture
 
 ## 🎯 Core Philosophy
 
@@ -7,7 +7,7 @@
 ## 📋 Project Structure
 
 ```
-ContainerFlow_Visualizer/
+StepFlow_Monitor/
 ├── app/                           # Application core
 │   ├── core/                      # Business logic
 │   │   ├── __init__.py
@@ -132,8 +132,8 @@ echo "STEP_COMPLETE:Model Training"
 ### Single Container
 ```yaml
 services:
-  containerflow:
-    image: containerflow/visualizer
+  stepflow:
+    image: stepflow/monitor
     ports:
       - "8080:8080"   # Web UI
       - "8765:8765"   # WebSocket
@@ -208,9 +208,9 @@ graph TB
    echo "STEP_COMPLETE:My Process"
    ```
 
-2. **Run with ContainerFlow**:
+2. **Run with StepFlow Monitor**:
    ```bash
-   docker run -p 8080:8080 containerflow/visualizer bash your_script.sh
+   docker run -p 8080:8080 stepflow/monitor bash your_script.sh
    ```
 
 3. **View in browser**: http://localhost:8080

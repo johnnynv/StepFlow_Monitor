@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ContainerFlow Marker Injection Example - Python Script
+StepFlow Monitor Marker Injection Example - Python Script
 Demonstrates minimal marker integration for step visualization
 """
 

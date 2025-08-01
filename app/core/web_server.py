@@ -15,13 +15,15 @@ logger = logging.getLogger(__name__)
 class WebServer:
     """HTTP server for web interface and API"""
     
-    def __init__(self, host: str = "0.0.0.0", port: int = 8080, execution_engine=None):
+    def __init__(self, host: str = "0.0.0.0", port: int = 8080, execution_engine=None, executions_api=None, persistence=None):
         self.host = host
         self.port = port
         self.app = None
         self.runner = None
         self.site = None
         self.execution_engine = execution_engine
+        self.executions_api = executions_api
+        self.persistence = persistence
         
         # Path setup
         self.app_path = Path(__file__).parent.parent
@@ -292,29 +294,55 @@ class WebServer:
     async def get_execution_statistics(self, request):
         """Get execution statistics"""
         try:
-            if self.execution_engine:
-                # Calculate real statistics
-                total_executions = len(self.execution_engine.active_executions)
-                active_now = len([ex for ex in self.execution_engine.active_executions.values() 
-                                if ex.status.value in ["running", "pending"]])
-                completed = len([ex for ex in self.execution_engine.active_executions.values() 
-                               if ex.status.value == "completed"])
-                success_rate = (completed / total_executions * 100) if total_executions > 0 else 0.0
-                
-                return web.json_response({
-                    "total_executions": total_executions,
-                    "active_now": active_now,
-                    "success_rate": f"{success_rate:.1f}%",
-                    "avg_duration": "-"  # Would need to calculate from completed executions
-                })
+            if hasattr(self, 'executions_api') and self.executions_api:
+                # Use the proper executions API for statistics
+                result = await self.executions_api.get_execution_statistics()
+                if result.get("status") == 200:
+                    stats = result.get("statistics", {})
+                    # Format the response to match frontend expectations
+                    return web.json_response({
+                        "total_executions": stats.get("total_executions", 0),
+                        "active_now": stats.get("active_count", 0),
+                        "success_rate": f"{stats.get('success_rate', 0):.1f}%",
+                        "avg_duration": f"{stats.get('avg_duration', 0):.1f}s" if stats.get('avg_duration', 0) > 0 else "-"
+                    })
+                else:
+                    return web.json_response({"error": result.get("error", "Unknown error")}, status=result.get("status", 500))
             else:
-                # Fallback to mock data
-                return web.json_response({
-                    "total_executions": 0,
-                    "active_now": 0,
-                    "success_rate": "0.0%",
-                    "avg_duration": "-"
-                })
+                # Fallback - manually calculate from persistence layer
+                if hasattr(self, 'persistence') and self.persistence:
+                    executions = await self.persistence.get_executions(limit=1000)
+                    total_executions = len(executions)
+                    
+                    if total_executions > 0:
+                        completed = len([ex for ex in executions if ex.status.value == "completed"])
+                        failed = len([ex for ex in executions if ex.status.value == "failed"])
+                        success_rate = (completed / total_executions) * 100
+                        
+                        # Calculate average duration for completed executions
+                        durations = [ex.duration_seconds for ex in executions if ex.duration_seconds and ex.status.value == "completed"]
+                        avg_duration = sum(durations) / len(durations) if durations else 0
+                    else:
+                        success_rate = 0
+                        avg_duration = 0
+                    
+                    # Get active executions count
+                    active_now = len(self.execution_engine.active_executions) if self.execution_engine else 0
+                    
+                    return web.json_response({
+                        "total_executions": total_executions,
+                        "active_now": active_now,
+                        "success_rate": f"{success_rate:.1f}%",
+                        "avg_duration": f"{avg_duration:.1f}s" if avg_duration > 0 else "-"
+                    })
+                else:
+                    # Final fallback
+                    return web.json_response({
+                        "total_executions": 0,
+                        "active_now": 0,
+                        "success_rate": "0.0%",
+                        "avg_duration": "-"
+                    })
         except Exception as e:
             logger.error(f"Error getting execution statistics: {e}")
             return web.json_response({"error": str(e)}, status=500)

@@ -8,60 +8,74 @@
     <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app-container">
         <nav class="navbar">
             <div class="nav-brand">
-                <h1>StepFlow <span class="brand-subtitle">Monitor</span></h1>
+                <h1>StepFlow</h1>
+                <span class="nav-subtitle">Monitor</span>
             </div>
-            <div class="nav-tabs">
-                <a href="/" class="nav-tab">Dashboard</a>
-                <a href="/execution" class="nav-tab active">Live Execution</a>
-                <a href="/history" class="nav-tab">History</a>
-                <a href="/artifacts" class="nav-tab">Artifacts</a>
+            <div class="nav-menu">
+                <a href="/" class="nav-item">Dashboard</a>
+                <a href="/history" class="nav-item">History</a>
             </div>
-            <div class="connection-status" id="connectionStatus">
-                🟢 Connected
+            <div class="nav-status">
+                <span id="connectionStatus" class="connection-status">🟢 Connected</span>
             </div>
         </nav>
 
         <main class="main-content">
-            <div class="page-header">
-                <h2>Live Execution Monitor</h2>
-                <p>Real-time monitoring of active script executions</p>
-            </div>
 
-            <!-- Active Executions List -->
-            <section class="active-executions">
-                <h3>Active Executions</h3>
-                <div id="activeExecutionsList" class="execution-list">
-                    <div class="loading">Loading active executions...</div>
-                </div>
-            </section>
+
+
 
             <!-- Live Execution Details -->
             <section class="execution-details" id="executionDetails" style="display: none;">
-                <h3>Execution Details</h3>
                 <div class="execution-header">
                     <div class="execution-info">
-                        <h4 id="executionName">-</h4>
-                        <p id="executionCommand">-</p>
-                        <span class="execution-status" id="executionStatus">-</span>
+                        <div class="info-item">
+                            <label>Execution Name:</label>
+                            <h4 id="executionName">-</h4>
+                        </div>
+                        <div class="info-item">
+                            <label>Command:</label>
+                            <p id="executionCommand">-</p>
+                        </div>
+                        <div class="execution-meta">
+                            <div class="meta-item">
+                                <label>Status:</label>
+                                <span class="execution-status" id="executionStatus">-</span>
+                            </div>
+                            <div class="meta-item">
+                                <label>Started:</label>
+                                <span id="executionStartTime">-</span>
+                            </div>
+                            <div class="meta-item">
+                                <label>Ended:</label>
+                                <span id="executionEndTime">-</span>
+                            </div>
+                            <div class="meta-item">
+                                <label>Duration:</label>
+                                <span id="executionDuration">-</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Steps Progress -->
+                <!-- Real-time Steps -->
                 <div class="steps-container">
-                    <h4>Execution Steps</h4>
-                    <div id="stepsProgress" class="steps-list">
-                        <!-- Steps will be populated here -->
+                    <h4>Execution Steps <span id="stepProgress">(0/0)</span></h4>
+                    <div id="stepsProgress" class="steps-timeline">
+                        <!-- Real-time steps will be populated here -->
                     </div>
                 </div>
+            </section>
 
-                <!-- Live Logs -->
-                <div class="logs-container">
-                    <h4>Live Logs</h4>
-                    <div id="liveLogs" class="logs-output">
-                        <!-- Logs will be streamed here -->
+            <!-- Execution Artifacts -->
+            <section class="execution-artifacts" id="executionArtifacts" style="display: none;">
+                <h4>Execution Artifacts</h4>
+                <div class="artifacts-container">
+                    <div class="artifacts-list" id="artifactsList">
+                        <!-- Artifacts will be populated here -->
                     </div>
                 </div>
             </section>
@@ -76,12 +90,12 @@
                 this.selectedExecutionId = null;
                 this.refreshInterval = 2000; // 2 seconds
                 this.refreshTimer = null;
+                this.expandedSteps = new Set(); // Track expanded steps
                 
                 this.init();
             }
             
             init() {
-                this.loadActiveExecutions();
                 this.startAutoRefresh();
                 this.setupWebSocketListeners();
                 
@@ -90,44 +104,15 @@
                 const executionId = urlParams.get('id');
                 if (executionId) {
                     this.selectExecution(executionId);
+                } else {
+                    // Show message if no execution specified
+                    document.getElementById('executionDetails').innerHTML = 
+                        '<div class="info">Please select an execution from the Dashboard to monitor.</div>';
+                    document.getElementById('executionDetails').style.display = 'block';
                 }
             }
             
-            async loadActiveExecutions() {
-                try {
-                    const response = await API.getActiveExecutions();
-                    const executions = response.active_executions || [];
-                    
-                    const container = document.getElementById('activeExecutionsList');
-                    
-                    if (executions.length === 0) {
-                        container.innerHTML = '<div class="no-data">No active executions</div>';
-                        return;
-                    }
-                    
-                    container.innerHTML = executions.map(exec => `
-                        <div class="execution-item ${this.selectedExecutionId === exec.id ? 'selected' : ''}" 
-                             onclick="liveMonitor.selectExecution('${exec.id}')">
-                            <div class="execution-item-header">
-                                <span class="execution-name">${exec.name || exec.id}</span>
-                                <span class="execution-status status-${exec.status}">${exec.status}</span>
-                            </div>
-                            <div class="execution-command">${exec.command}</div>
-                            <div class="execution-time">Started: ${exec.start_time ? new Date(exec.start_time).toLocaleString() : 'N/A'}</div>
-                        </div>
-                    `).join('');
-                    
-                    // Auto-select first execution if none selected
-                    if (!this.selectedExecutionId && executions.length > 0) {
-                        this.selectExecution(executions[0].id);
-                    }
-                    
-                } catch (error) {
-                    console.error('Failed to load active executions:', error);
-                    document.getElementById('activeExecutionsList').innerHTML = 
-                        '<div class="error">Failed to load active executions</div>';
-                }
-            }
+
             
             async selectExecution(executionId) {
                 this.selectedExecutionId = executionId;
@@ -137,14 +122,15 @@
                 url.searchParams.set('id', executionId);
                 window.history.replaceState({}, '', url);
                 
-                // Reload executions to update selection
-                await this.loadActiveExecutions();
-                
                 // Load execution details
                 await this.loadExecutionDetails(executionId);
                 
+                // Load execution artifacts
+                await this.loadExecutionArtifacts(executionId);
+                
                 // Show details section
                 document.getElementById('executionDetails').style.display = 'block';
+                document.getElementById('executionArtifacts').style.display = 'block';
             }
             
             async loadExecutionDetails(executionId) {
@@ -158,19 +144,250 @@
                     document.getElementById('executionStatus').textContent = execution.status || '-';
                     document.getElementById('executionStatus').className = `execution-status status-${execution.status}`;
                     
-                    // Load steps and logs
+                    // Update execution metadata
+                    const startTime = execution.start_time ? new Date(execution.start_time).toLocaleString() : '-';
+                    const endTime = execution.end_time ? new Date(execution.end_time).toLocaleString() : '-';
+                    const duration = this.calculateDuration(execution.start_time, execution.end_time);
+                    
+                    document.getElementById('executionStartTime').textContent = startTime;
+                    document.getElementById('executionEndTime').textContent = endTime;
+                    document.getElementById('executionDuration').textContent = duration;
+                    
+                    // Load real-time steps
                     await this.loadExecutionSteps(executionId);
-                    await this.loadExecutionLogs(executionId);
                     
                 } catch (error) {
                     console.error('Failed to load execution details:', error);
                 }
             }
             
+            calculateDuration(startTime, endTime) {
+                if (!startTime) return '-';
+                
+                const start = new Date(startTime);
+                const end = endTime ? new Date(endTime) : new Date();
+                const diff = end - start;
+                
+                const seconds = Math.floor(diff / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+                } else if (minutes > 0) {
+                    return `${minutes}m ${seconds % 60}s`;
+                } else {
+                    return `${seconds}s`;
+                }
+            }
+            
             async loadExecutionSteps(executionId) {
-                // This would load step information
-                const stepsContainer = document.getElementById('stepsProgress');
-                stepsContainer.innerHTML = '<div class="info">Step tracking will be displayed here</div>';
+                try {
+                    // For now, simulate step data - later this will come from the API
+                    const steps = await this.getExecutionSteps(executionId);
+                    
+                    const stepsContainer = document.getElementById('stepsProgress');
+                    const progressIndicator = document.getElementById('stepProgress');
+                    
+                    const completedSteps = steps.filter(step => step.status === 'completed').length;
+                    progressIndicator.textContent = `(${completedSteps}/${steps.length})`;
+                    
+                    stepsContainer.innerHTML = steps.map((step, index) => {
+                        const isExpanded = this.expandedSteps.has(index);
+                        return `
+                        <div class="step-item ${step.status}" id="step-${index}">
+                            <div class="step-header" onclick="liveMonitor.toggleStepOutput(${index})">
+                                <div class="step-icon">
+                                    ${step.status === 'completed' ? '✅' : 
+                                      step.status === 'running' ? '🔄' : 
+                                      step.status === 'failed' ? '❌' : '⏳'}
+                                </div>
+                                <div class="step-info">
+                                    <h5>${step.name}</h5>
+                                    <span class="step-duration">${step.duration || ''}</span>
+                                </div>
+                                <div class="step-toggle ${isExpanded ? 'expanded' : ''}">
+                                    ▼
+                                </div>
+                            </div>
+                            <div class="step-output ${isExpanded ? 'expanded' : 'collapsed'}" id="step-output-${index}">
+                                <pre class="step-logs">${step.output || 'No output yet...'}</pre>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                    
+                } catch (error) {
+                    console.error('Failed to load execution steps:', error);
+                    document.getElementById('stepsProgress').innerHTML = 
+                        '<div class="error">Failed to load steps</div>';
+                }
+            }
+            
+            async getExecutionSteps(executionId) {
+                // Simulate step data - this would come from your marker parser
+                return [
+                    {
+                        name: 'Environment Setup',
+                        status: 'completed',
+                        duration: '30s',
+                        output: '[2025-08-01 22:30:15.123] Installing dependencies...\n[2025-08-01 22:30:18.456] Resolving package dependencies\n[2025-08-01 22:30:25.789] Setting up environment variables...\n[2025-08-01 22:30:30.012] Configuring runtime paths\n[2025-08-01 22:30:45.345] ✅ Environment ready'
+                    },
+                    {
+                        name: 'Data Processing',
+                        status: 'failed',
+                        duration: '15s',
+                        output: '[2025-08-01 22:30:46.678] Loading data files...\n[2025-08-01 22:30:48.901] Reading configuration file\n[2025-08-01 22:30:50.234] Processing records...\n[2025-08-01 22:30:55.567] Validating data format\n[2025-08-01 22:31:01.890] ❌ Error: File not found - data.csv'
+                    },
+                    {
+                        name: 'Model Training',
+                        status: 'pending',
+                        duration: '',
+                        output: ''
+                    }
+                ];
+            }
+            
+            async loadExecutionArtifacts(executionId) {
+                try {
+                    // Get execution details to collect output
+                    const execution = await API.getExecution(executionId);
+                    if (!execution) return;
+                    
+                    const artifacts = [];
+                    
+                    // Always include full output as an artifact with step names
+                    const steps = await this.getExecutionSteps(executionId);
+                    const fullOutput = steps.map(step => {
+                        if (!step.output) return '';
+                        return `=== STEP: ${step.name} ===\n${step.output}\n`;
+                    }).filter(output => output).join('\n');
+                    
+                    artifacts.push({
+                        name: 'Full Execution Output',
+                        type: 'output',
+                        size: this.formatBytes(fullOutput.length),
+                        description: 'Complete output logs from all execution steps',
+                        downloadable: true,
+                        content: fullOutput
+                    });
+                    
+                    // Check for additional artifacts (simulated for now)
+                    const additionalArtifacts = await this.getAdditionalArtifacts(executionId);
+                    artifacts.push(...additionalArtifacts);
+                    
+                    this.renderArtifacts(artifacts);
+                    
+                } catch (error) {
+                    console.error('Failed to load execution artifacts:', error);
+                    document.getElementById('artifactsList').innerHTML = 
+                        '<div class="error">Failed to load artifacts</div>';
+                }
+            }
+            
+            async getAdditionalArtifacts(executionId) {
+                // Simulate additional artifacts like pytest XML files
+                // In real implementation, this would check the filesystem for declared artifacts
+                return [
+                    {
+                        name: 'pytest-results.xml',
+                        type: 'file',
+                        size: '2.4 KB',
+                        description: 'Pytest test results in XML format',
+                        downloadable: true,
+                        path: '/artifacts/pytest-results.xml'
+                    },
+                    {
+                        name: 'coverage-report.html',
+                        type: 'file',
+                        size: '45.2 KB',
+                        description: 'Code coverage report',
+                        downloadable: true,
+                        path: '/artifacts/coverage-report.html'
+                    }
+                ];
+            }
+            
+            renderArtifacts(artifacts) {
+                const container = document.getElementById('artifactsList');
+                
+                if (artifacts.length === 0) {
+                    container.innerHTML = '<div class="info">No artifacts available</div>';
+                    return;
+                }
+                
+                container.innerHTML = artifacts.map((artifact, index) => `
+                    <div class="artifact-item">
+                        <div class="artifact-header">
+                            <div class="artifact-icon">
+                                ${artifact.type === 'output' ? '📄' : '📁'}
+                            </div>
+                            <div class="artifact-info">
+                                <h5>${artifact.name}</h5>
+                                <p class="artifact-description">${artifact.description}</p>
+                                <span class="artifact-size">${artifact.size}</span>
+                            </div>
+                            <div class="artifact-actions">
+                                ${artifact.downloadable ? 
+                                    `<button onclick="liveMonitor.downloadArtifact(${index})" 
+                                             class="btn btn-sm btn-primary">
+                                        📥 Download
+                                     </button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Store artifacts for download
+                this.artifacts = artifacts;
+            }
+            
+            downloadArtifact(index) {
+                const artifact = this.artifacts[index];
+                if (!artifact) return;
+                
+                if (artifact.type === 'output') {
+                    // Download output as text file
+                    const blob = new Blob([artifact.content], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `execution-${this.selectedExecutionId}-output.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } else if (artifact.path) {
+                    // Download file from server
+                    window.open(artifact.path, '_blank');
+                }
+            }
+            
+            formatBytes(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            toggleStepOutput(stepIndex) {
+                const output = document.getElementById(`step-output-${stepIndex}`);
+                const toggle = output?.parentElement.querySelector('.step-toggle');
+                
+                if (output) {
+                    output.classList.toggle('collapsed');
+                    output.classList.toggle('expanded');
+                    
+                    // Update expanded steps tracker
+                    if (output.classList.contains('expanded')) {
+                        this.expandedSteps.add(stepIndex);
+                        if (toggle) toggle.classList.add('expanded');
+                    } else {
+                        this.expandedSteps.delete(stepIndex);
+                        if (toggle) toggle.classList.remove('expanded');
+                    }
+                }
             }
             
             async loadExecutionLogs(executionId) {
@@ -198,7 +415,6 @@
             
             startAutoRefresh() {
                 this.refreshTimer = setInterval(() => {
-                    this.loadActiveExecutions();
                     if (this.selectedExecutionId) {
                         this.loadExecutionDetails(this.selectedExecutionId);
                     }

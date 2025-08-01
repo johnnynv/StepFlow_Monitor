@@ -26,7 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class ContainerFlowApp:
+class StepFlowApp:
     """Main application class"""
     
     def __init__(self, config: Dict[str, Any] = None):
@@ -50,15 +50,17 @@ class ContainerFlowApp:
             websocket_server=self.websocket_server
         )
         
+        # Initialize APIs first
+        self.executions_api = ExecutionsAPI(
+            self.execution_engine, self.persistence, self.auth_manager
+        )
+        
         self.web_server = WebServer(
             host=self.config.get('web_host', '0.0.0.0'),
             port=self.config.get('web_port', 8080),
-            execution_engine=self.execution_engine
-        )
-        
-        # Initialize APIs
-        self.executions_api = ExecutionsAPI(
-            self.execution_engine, self.persistence, self.auth_manager
+            execution_engine=self.execution_engine,
+            executions_api=self.executions_api,
+            persistence=self.persistence
         )
         self.artifacts_api = ArtifactsAPI(self.persistence, self.auth_manager)
         self.health_api = HealthAPI(
@@ -67,7 +69,7 @@ class ContainerFlowApp:
     
     async def start(self):
         """Start the application"""
-        logger.info("Starting ContainerFlow Visualizer...")
+        logger.info("Starting StepFlow Monitor...")
         
         try:
             # Initialize persistence
@@ -83,7 +85,7 @@ class ContainerFlowApp:
             logger.info("✅ Web server started")
             
             self.running = True
-            logger.info("🚀 ContainerFlow Visualizer is running")
+            logger.info("🚀 StepFlow Monitor is running")
             
             # Setup signal handlers
             signal.signal(signal.SIGINT, self._signal_handler)
@@ -99,7 +101,7 @@ class ContainerFlowApp:
     
     async def stop(self):
         """Stop the application"""
-        logger.info("Stopping ContainerFlow Visualizer...")
+        logger.info("Stopping StepFlow Monitor...")
         
         self.running = False
         
@@ -113,7 +115,7 @@ class ContainerFlowApp:
             await self.web_server.stop()
             logger.info("✅ Web server stopped")
         
-        logger.info("🛑 ContainerFlow Visualizer stopped")
+        logger.info("🛑 StepFlow Monitor stopped")
     
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals"""
@@ -146,7 +148,7 @@ async def main():
     }
     
     # Create and start app
-    app = ContainerFlowApp(config)
+    app = StepFlowApp(config)
     
     try:
         await app.start()

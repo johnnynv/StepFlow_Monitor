@@ -1,10 +1,10 @@
-# ContainerFlow Visualizer Examples
+# StepFlow Monitor Examples
 
 This directory contains example scripts demonstrating the marker injection strategy for step visualization.
 
 ## 🎯 Marker Injection Strategy
 
-ContainerFlow uses **minimal markers** that you add to your existing scripts to enable step-by-step visualization. The markers are simple echo/print statements that don't interfere with your script logic.
+StepFlow Monitor uses **minimal markers** that you add to your existing scripts to enable step-by-step visualization. The markers are simple echo/print statements that don't interfere with your script logic.
 
 ## 📋 Marker Types
 
@@ -26,19 +26,19 @@ ContainerFlow uses **minimal markers** that you add to your existing scripts to 
 # Make executable
 chmod +x examples/shell_example.sh
 
-# Run with ContainerFlow
+# Run with StepFlow Monitor
 docker run -p 8080:8080 -p 8765:8765 \
   -v $(pwd)/examples:/workspace \
-  containerflow/visualizer \
+  stepflow/monitor \
   bash /workspace/shell_example.sh
 ```
 
 ### Python Script Example
 ```bash
-# Run with ContainerFlow
+# Run with StepFlow Monitor
 docker run -p 8080:8080 -p 8765:8765 \
   -v $(pwd)/examples:/workspace \
-  containerflow/visualizer \
+  stepflow/monitor \
   python /workspace/python_example.py
 ```
 
@@ -48,7 +48,7 @@ docker run -p 8080:8080 -p 8765:8765 \
 docker run -p 8080:8080 -p 8765:8765 \
   -v $(pwd)/examples:/workspace \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  containerflow/visualizer \
+  stepflow/monitor \
   docker build -t myapp /workspace/dockerfile_example/
 ```
 
@@ -106,7 +106,7 @@ echo "META:DESCRIPTION:This step processes large datasets"
 
 ## 🐳 Docker Integration
 
-ContainerFlow works seamlessly with Docker workflows:
+StepFlow Monitor works seamlessly with Docker workflows:
 
 ```bash
 # Dockerfile with markers
@@ -160,4 +160,4 @@ echo "STEP_COMPLETE:Parallel Data Processing"
 
 ## 🎯 Zero-Modification Alternative
 
-If you cannot modify your scripts, ContainerFlow also supports **zero-modification** mode with heuristic pattern detection. However, marker injection provides much more accurate step detection and artifact collection.
+If you cannot modify your scripts, StepFlow Monitor also supports **zero-modification** mode with heuristic pattern detection. However, marker injection provides much more accurate step detection and artifact collection.

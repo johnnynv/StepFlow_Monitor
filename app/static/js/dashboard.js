@@ -72,13 +72,15 @@ class Dashboard {
             stats.total_executions || 0;
         
         document.getElementById('activeExecutions').textContent = 
-            stats.active_count || 0;
+            stats.active_now || 0;
         
+        // success_rate is already formatted as string from API
         document.getElementById('successRate').textContent = 
-            Formatters.percentage(stats.success_rate || 0);
+            stats.success_rate || '0.0%';
         
+        // avg_duration is already formatted as string from API  
         document.getElementById('avgDuration').textContent = 
-            Formatters.duration(stats.avg_duration || 0);
+            stats.avg_duration || '-';
     }
     
     updateRecentExecutions(executions) {
@@ -90,16 +92,26 @@ class Dashboard {
             return;
         }
         
-        tbody.innerHTML = executions.map(execution => `
-            <tr class="execution-row">
+        tbody.innerHTML = executions.map(execution => {
+            // Calculate duration from start_time and end_time
+            let duration = '-';
+            if (execution.start_time) {
+                const startTime = new Date(execution.start_time);
+                const endTime = execution.end_time ? new Date(execution.end_time) : new Date();
+                const durationSeconds = (endTime - startTime) / 1000;
+                duration = Formatters.duration(durationSeconds);
+            }
+            
+            return `
+            <tr class="execution-row" onclick="viewExecution('${execution.id}')" style="cursor: pointer;">
                 <td>
                     <div class="execution-name">${execution.name || 'Unnamed'}</div>
                     <div class="execution-command">${execution.command}</div>
                 </td>
                 <td>${Formatters.statusBadge(execution.status)}</td>
-                <td>${Formatters.duration(execution.duration_seconds)}</td>
-                <td>${Formatters.timestamp(execution.started_at)}</td>
-                <td>
+                <td>${duration}</td>
+                <td>${Formatters.timestamp(execution.start_time)}</td>
+                <td onclick="event.stopPropagation()">
                     <div class="execution-actions">
                         <button onclick="viewExecution('${execution.id}')" class="btn btn-sm btn-secondary">
                             View
@@ -112,7 +124,8 @@ class Dashboard {
                     </div>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
     
     updateActiveExecutions(executions) {
@@ -129,7 +142,7 @@ class Dashboard {
         section.style.display = 'block';
         
         list.innerHTML = executions.map(execution => `
-            <div class="active-execution">
+            <div class="active-execution" onclick="viewExecution('${execution.id}')" style="cursor: pointer;">
                 <div class="active-execution-header">
                     <div class="active-execution-name">${execution.name || 'Unnamed'}</div>
                     <div class="active-execution-progress">
@@ -170,8 +183,10 @@ class Dashboard {
             // Show success message
             this.showSuccess(`Execution "${execution.name || execution.id}" started successfully`);
             
-            // Optionally redirect to execution view
-            // window.location.href = `/execution?id=${execution.id}`;
+            // Redirect to the specific execution view
+            setTimeout(() => {
+                window.location.href = `/execution?id=${execution.id}`;
+            }, 1500); // Small delay to show success message
             
         } catch (error) {
             console.error('Failed to start execution:', error);
@@ -300,8 +315,13 @@ function hideNewExecutionDialog() {
     }
 }
 
-function goToLive() {
-    window.location.href = '/execution';
+function scrollToActiveExecutions() {
+    const activeSection = document.getElementById('activeExecutionsSection');
+    if (activeSection && activeSection.style.display !== 'none') {
+        activeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        alert('No active executions found. Start a new execution to monitor it live.');
+    }
 }
 
 function goToHistory() {

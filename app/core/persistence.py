@@ -23,7 +23,7 @@ class PersistenceLayer:
     
     def __init__(self, storage_path: str = "storage"):
         self.storage_path = Path(storage_path)
-        self.db_path = self.storage_path / "database" / "containerflow.db"
+        self.db_path = self.storage_path / "database" / "stepflow.db"
         self.executions_path = self.storage_path / "executions"
         self.artifacts_path = self.storage_path / "artifacts"
         

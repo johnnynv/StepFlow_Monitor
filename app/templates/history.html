@@ -8,19 +8,18 @@
     <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app-container">
         <nav class="navbar">
             <div class="nav-brand">
-                <h1>StepFlow <span class="brand-subtitle">Monitor</span></h1>
+                <h1>StepFlow</h1>
+                <span class="nav-subtitle">Monitor</span>
             </div>
-            <div class="nav-tabs">
-                <a href="/" class="nav-tab">Dashboard</a>
-                <a href="/execution" class="nav-tab">Live Execution</a>
-                <a href="/history" class="nav-tab active">History</a>
-                <a href="/artifacts" class="nav-tab">Artifacts</a>
+            <div class="nav-menu">
+                <a href="/" class="nav-item">Dashboard</a>
+                <a href="/history" class="nav-item active">History</a>
             </div>
-            <div class="connection-status" id="connectionStatus">
-                🟢 Connected
+            <div class="nav-status">
+                <span id="connectionStatus" class="connection-status">🟢 Connected</span>
             </div>
         </nav>
 
@@ -189,40 +188,9 @@
                 }
             }
             
-            async viewExecution(executionId) {
-                try {
-                    const execution = await API.getExecution(executionId);
-                    if (!execution) {
-                        alert('Execution not found');
-                        return;
-                    }
-                    
-                    // Populate modal
-                    document.getElementById('modalExecutionName').textContent = execution.name || execution.id;
-                    document.getElementById('modalExecutionCommand').textContent = execution.command || '-';
-                    document.getElementById('modalExecutionStatus').textContent = execution.status || '-';
-                    document.getElementById('modalExecutionStatus').className = `status-badge status-${execution.status}`;
-                    
-                    const startTime = execution.start_time ? new Date(execution.start_time) : null;
-                    const endTime = execution.end_time ? new Date(execution.end_time) : null;
-                    
-                    document.getElementById('modalExecutionStarted').textContent = 
-                        startTime ? startTime.toLocaleString() : '-';
-                    document.getElementById('modalExecutionCompleted').textContent = 
-                        endTime ? endTime.toLocaleString() : '-';
-                    document.getElementById('modalExecutionDuration').textContent = 
-                        startTime && endTime ? this.formatDuration(endTime - startTime) : '-';
-                    
-                    // Load logs
-                    this.loadExecutionLogs(executionId);
-                    
-                    // Show modal
-                    document.getElementById('executionModal').style.display = 'flex';
-                    
-                } catch (error) {
-                    console.error('Failed to load execution details:', error);
-                    alert('Failed to load execution details');
-                }
+            viewExecution(executionId) {
+                // Navigate to Live Execution Monitor page, same as dashboard
+                window.location.href = `/execution?id=${executionId}`;
             }
             
             async loadExecutionLogs(executionId) {

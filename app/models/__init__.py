@@ -1,5 +1,5 @@
 """
-Data models for ContainerFlow Visualizer
+Data models for StepFlow Monitor
 """
 
 from .execution import Execution, ExecutionStatus

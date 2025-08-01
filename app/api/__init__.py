@@ -1,5 +1,5 @@
 """
-REST API endpoints for ContainerFlow Visualizer
+REST API endpoints for StepFlow Monitor
 """
 
 from .executions import ExecutionsAPI

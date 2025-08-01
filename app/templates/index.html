@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContainerFlow Visualizer - Dashboard</title>
+    <title>StepFlow Monitor - Dashboard</title>
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
@@ -17,9 +17,7 @@
             </div>
             <div class="nav-menu">
                 <a href="/" class="nav-item active">Dashboard</a>
-                <a href="/execution" class="nav-item">Live Execution</a>
                 <a href="/history" class="nav-item">History</a>
-                <a href="/artifacts" class="nav-item">Artifacts</a>
             </div>
             <div class="nav-status">
                 <span id="connectionStatus" class="connection-status">🔴 Disconnected</span>
@@ -28,33 +26,6 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Quick Actions -->
-            <section class="quick-actions">
-                <h2>Quick Actions</h2>
-                <div class="action-cards">
-                    <div class="action-card">
-                        <h3>New Execution</h3>
-                        <p>Start a new script execution</p>
-                        <button onclick="showNewExecutionDialog()" class="btn btn-primary">
-                            ▶️ Start Execution
-                        </button>
-                    </div>
-                    <div class="action-card">
-                        <h3>View Live</h3>
-                        <p>Monitor active executions</p>
-                        <button onclick="goToLive()" class="btn btn-secondary">
-                            📺 Live View
-                        </button>
-                    </div>
-                    <div class="action-card">
-                        <h3>Browse History</h3>
-                        <p>View past executions</p>
-                        <button onclick="goToHistory()" class="btn btn-secondary">
-                            📜 History
-                        </button>
-                    </div>
-                </div>
-            </section>
 
             <!-- Statistics -->
             <section class="statistics">
