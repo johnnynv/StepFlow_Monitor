@@ -12,8 +12,8 @@
         <!-- Navigation -->
         <nav class="navbar">
             <div class="nav-brand">
-                <h1>ContainerFlow</h1>
-                <span class="nav-subtitle">Visualizer</span>
+                <h1>StepFlow</h1>
+                <span class="nav-subtitle">Monitor</span>
             </div>
             <div class="nav-menu">
                 <a href="/" class="nav-item active">Dashboard</a>
@@ -123,19 +123,19 @@
                 <form id="newExecutionForm">
                     <div class="form-group">
                         <label for="executionName">Execution Name:</label>
-                        <input type="text" id="executionName" placeholder="Optional execution name">
+                        <input type="text" id="executionName" name="executionName" placeholder="Optional execution name">
                     </div>
                     <div class="form-group">
                         <label for="command">Command:</label>
-                        <input type="text" id="command" placeholder="bash script.sh" required>
+                        <input type="text" id="command" name="command" placeholder="bash script.sh" required>
                     </div>
                     <div class="form-group">
                         <label for="workingDirectory">Working Directory:</label>
-                        <input type="text" id="workingDirectory" value="." placeholder="/path/to/directory">
+                        <input type="text" id="workingDirectory" name="workingDirectory" value="." placeholder="/path/to/directory">
                     </div>
                     <div class="form-group">
                         <label for="timeout">Timeout (seconds):</label>
-                        <input type="number" id="timeout" placeholder="Optional timeout">
+                        <input type="number" id="timeout" name="timeout" placeholder="Optional timeout">
                     </div>
                     <div class="form-actions">
                         <button type="button" onclick="hideNewExecutionDialog()" class="btn btn-secondary">Cancel</button>

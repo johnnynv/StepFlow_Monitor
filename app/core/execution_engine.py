@@ -25,6 +25,7 @@ class ExecutionEngine:
         self.persistence = persistence_layer
         self.websocket_server = websocket_server
         self.active_executions: Dict[str, Execution] = {}
+        self.completed_executions: Dict[str, Execution] = {}  # Store completed executions
         self.active_processes: Dict[str, subprocess.Popen] = {}
         
     async def execute_script(
@@ -374,6 +375,21 @@ class ExecutionEngine:
         
     async def _notify_execution_update(self, execution: Execution):
         """Notify about execution updates"""
+        # Move completed/failed executions to completed_executions
+        if execution.status in [ExecutionStatus.COMPLETED, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED]:
+            if execution.id in self.active_executions:
+                # Move to completed executions
+                self.completed_executions[execution.id] = execution
+                # Remove from active executions after a short delay to allow UI updates
+                await asyncio.sleep(1)  # Give time for WebSocket to propagate
+                del self.active_executions[execution.id]
+                
+                # Clean up process references
+                if execution.id in self.active_processes:
+                    del self.active_processes[execution.id]
+                
+                logger.info(f"Moved execution {execution.id} to completed executions")
+        
         if self.websocket_server:
             await self.websocket_server.broadcast_execution_update(execution)
     

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Execution History - StepFlow Monitor</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>StepFlow <span class="brand-subtitle">Monitor</span></h1>
+            </div>
+            <div class="nav-tabs">
+                <a href="/" class="nav-tab">Dashboard</a>
+                <a href="/execution" class="nav-tab">Live Execution</a>
+                <a href="/history" class="nav-tab active">History</a>
+                <a href="/artifacts" class="nav-tab">Artifacts</a>
+            </div>
+            <div class="connection-status" id="connectionStatus">
+                🟢 Connected
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h2>Execution History</h2>
+                <p>Browse and analyze past script executions</p>
+            </div>
+
+            <!-- Filters -->
+            <section class="filters">
+                <div class="filter-group">
+                    <label for="statusFilter">Status:</label>
+                    <select id="statusFilter">
+                        <option value="">All</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="limitFilter">Show:</label>
+                    <select id="limitFilter">
+                        <option value="10">10 executions</option>
+                        <option value="25">25 executions</option>
+                        <option value="50">50 executions</option>
+                        <option value="100">100 executions</option>
+                    </select>
+                </div>
+                <button onclick="historyManager.applyFilters()" class="btn btn-secondary">Apply Filters</button>
+            </section>
+
+            <!-- Execution History Table -->
+            <section class="history-table">
+                <div class="table-container">
+                    <table class="execution-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Command</th>
+                                <th>Status</th>
+                                <th>Started</th>
+                                <th>Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="6" class="loading">Loading execution history...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Execution Details Modal -->
+            <div id="executionModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Execution Details</h3>
+                        <button onclick="historyManager.closeModal()" class="close-btn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="execution-summary">
+                            <div class="summary-item">
+                                <label>Name:</label>
+                                <span id="modalExecutionName">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <label>Command:</label>
+                                <span id="modalExecutionCommand">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <label>Status:</label>
+                                <span id="modalExecutionStatus">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <label>Started:</label>
+                                <span id="modalExecutionStarted">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <label>Completed:</label>
+                                <span id="modalExecutionCompleted">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <label>Duration:</label>
+                                <span id="modalExecutionDuration">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="execution-logs">
+                            <h4>Execution Logs</h4>
+                            <div id="modalExecutionLogs" class="logs-output">
+                                Loading logs...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script>
+        class HistoryManager {
+            constructor() {
+                this.currentFilters = {
+                    status: '',
+                    limit: 10
+                };
+                
+                this.init();
+            }
+            
+            init() {
+                this.loadHistory();
+                this.setupWebSocketListeners();
+                
+                // Set default filter values
+                document.getElementById('limitFilter').value = this.currentFilters.limit;
+            }
+            
+            async loadHistory() {
+                try {
+                    const response = await API.getExecutions(this.currentFilters.limit);
+                    const executions = response.executions || [];
+                    
+                    const tableBody = document.getElementById('historyTableBody');
+                    
+                    if (executions.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="no-data">No executions found</td></tr>';
+                        return;
+                    }
+                    
+                    tableBody.innerHTML = executions
+                        .filter(exec => !this.currentFilters.status || exec.status === this.currentFilters.status)
+                        .map(exec => {
+                            const startTime = exec.start_time ? new Date(exec.start_time) : null;
+                            const endTime = exec.end_time ? new Date(exec.end_time) : null;
+                            const duration = startTime && endTime ? 
+                                this.formatDuration(endTime - startTime) : '-';
+                            
+                            return `
+                                <tr>
+                                    <td>${exec.name || exec.id}</td>
+                                    <td class="command-cell">${exec.command || '-'}</td>
+                                    <td><span class="status-badge status-${exec.status}">${exec.status}</span></td>
+                                    <td>${startTime ? startTime.toLocaleString() : '-'}</td>
+                                    <td>${duration}</td>
+                                    <td>
+                                        <button onclick="historyManager.viewExecution('${exec.id}')" 
+                                                class="btn btn-sm btn-secondary">View</button>
+                                        ${exec.status === 'running' ? 
+                                            `<button onclick="historyManager.cancelExecution('${exec.id}')" 
+                                                     class="btn btn-sm btn-danger">Cancel</button>` : ''}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                        
+                } catch (error) {
+                    console.error('Failed to load execution history:', error);
+                    document.getElementById('historyTableBody').innerHTML = 
+                        '<tr><td colspan="6" class="error">Failed to load execution history</td></tr>';
+                }
+            }
+            
+            async viewExecution(executionId) {
+                try {
+                    const execution = await API.getExecution(executionId);
+                    if (!execution) {
+                        alert('Execution not found');
+                        return;
+                    }
+                    
+                    // Populate modal
+                    document.getElementById('modalExecutionName').textContent = execution.name || execution.id;
+                    document.getElementById('modalExecutionCommand').textContent = execution.command || '-';
+                    document.getElementById('modalExecutionStatus').textContent = execution.status || '-';
+                    document.getElementById('modalExecutionStatus').className = `status-badge status-${execution.status}`;
+                    
+                    const startTime = execution.start_time ? new Date(execution.start_time) : null;
+                    const endTime = execution.end_time ? new Date(execution.end_time) : null;
+                    
+                    document.getElementById('modalExecutionStarted').textContent = 
+                        startTime ? startTime.toLocaleString() : '-';
+                    document.getElementById('modalExecutionCompleted').textContent = 
+                        endTime ? endTime.toLocaleString() : '-';
+                    document.getElementById('modalExecutionDuration').textContent = 
+                        startTime && endTime ? this.formatDuration(endTime - startTime) : '-';
+                    
+                    // Load logs
+                    this.loadExecutionLogs(executionId);
+                    
+                    // Show modal
+                    document.getElementById('executionModal').style.display = 'flex';
+                    
+                } catch (error) {
+                    console.error('Failed to load execution details:', error);
+                    alert('Failed to load execution details');
+                }
+            }
+            
+            async loadExecutionLogs(executionId) {
+                try {
+                    const logs = await API.getExecutionLogs(executionId);
+                    const logsContainer = document.getElementById('modalExecutionLogs');
+                    
+                    if (logs && logs.length > 0) {
+                        logsContainer.innerHTML = logs.map(log => 
+                            `<div class="log-entry">${log.timestamp}: ${log.message}</div>`
+                        ).join('');
+                    } else {
+                        logsContainer.innerHTML = '<div class="info">No logs available</div>';
+                    }
+                    
+                } catch (error) {
+                    console.error('Failed to load execution logs:', error);
+                    document.getElementById('modalExecutionLogs').innerHTML = 
+                        '<div class="error">Failed to load logs</div>';
+                }
+            }
+            
+            async cancelExecution(executionId) {
+                if (!confirm('Are you sure you want to cancel this execution?')) {
+                    return;
+                }
+                
+                try {
+                    await API.stopExecution(executionId);
+                    alert('Execution cancelled successfully');
+                    this.loadHistory(); // Refresh the list
+                } catch (error) {
+                    console.error('Failed to cancel execution:', error);
+                    alert('Failed to cancel execution: ' + error.message);
+                }
+            }
+            
+            applyFilters() {
+                this.currentFilters.status = document.getElementById('statusFilter').value;
+                this.currentFilters.limit = parseInt(document.getElementById('limitFilter').value);
+                
+                this.loadHistory();
+            }
+            
+            closeModal() {
+                document.getElementById('executionModal').style.display = 'none';
+            }
+            
+            formatDuration(milliseconds) {
+                const seconds = Math.floor(milliseconds / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+                } else if (minutes > 0) {
+                    return `${minutes}m ${seconds % 60}s`;
+                } else {
+                    return `${seconds}s`;
+                }
+            }
+            
+            setupWebSocketListeners() {
+                if (window.wsClient) {
+                    wsClient.on('connected', () => {
+                        document.getElementById('connectionStatus').innerHTML = '🟢 Connected';
+                        document.getElementById('connectionStatus').className = 'connection-status connected';
+                        this.loadHistory();
+                    });
+                    
+                    wsClient.on('disconnected', () => {
+                        document.getElementById('connectionStatus').innerHTML = '🔴 Disconnected';
+                        document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                    });
+                    
+                    wsClient.on('execution_update', () => {
+                        this.loadHistory(); // Refresh when executions change
+                    });
+                }
+            }
+        }
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.historyManager = new HistoryManager();
+        });
+    </script>
+</body>
+</html>

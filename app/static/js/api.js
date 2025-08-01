@@ -129,7 +129,7 @@ const API = {
     async startExecution(executionData) {
         try {
             const response = await apiClient.createExecution(executionData);
-            return response.execution;
+            return response; // Return the full response, not response.execution
         } catch (error) {
             console.error('Failed to start execution:', error);
             throw error;
@@ -195,6 +195,47 @@ const API = {
         } catch (error) {
             console.error('Failed to load system status:', error);
             return {};
+        }
+    },
+    
+    // Method aliases for new pages
+    async getExecutions(limit = 10) {
+        try {
+            const response = await apiClient.getExecutions(limit);
+            return response;
+        } catch (error) {
+            console.error('Failed to load executions:', error);
+            return { executions: [] };
+        }
+    },
+    
+    async getActiveExecutions() {
+        try {
+            const response = await apiClient.getActiveExecutions();
+            return response;
+        } catch (error) {
+            console.error('Failed to load active executions:', error);
+            return { active_executions: [] };
+        }
+    },
+    
+    async getExecution(executionId) {
+        try {
+            const response = await apiClient.getExecution(executionId);
+            return response;
+        } catch (error) {
+            console.error(`Failed to load execution ${executionId}:`, error);
+            return null;
+        }
+    },
+    
+    async getExecutionLogs(executionId, stepId = null) {
+        try {
+            const response = await apiClient.getExecutionLogs(executionId, stepId);
+            return response.logs || [];
+        } catch (error) {
+            console.error(`Failed to load execution logs for ${executionId}:`, error);
+            return [];
         }
     }
 };

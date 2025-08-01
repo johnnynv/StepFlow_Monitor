@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from app.core import (
     MarkerParser, ExecutionEngine, PersistenceLayer, 
-    WebSocketServer, AuthManager, configure_auth
+    WebSocketServer, WebServer, AuthManager, configure_auth
 )
 from app.api import ExecutionsAPI, ArtifactsAPI, HealthAPI
 
@@ -50,6 +50,12 @@ class ContainerFlowApp:
             websocket_server=self.websocket_server
         )
         
+        self.web_server = WebServer(
+            host=self.config.get('web_host', '0.0.0.0'),
+            port=self.config.get('web_port', 8080),
+            execution_engine=self.execution_engine
+        )
+        
         # Initialize APIs
         self.executions_api = ExecutionsAPI(
             self.execution_engine, self.persistence, self.auth_manager
@@ -71,6 +77,10 @@ class ContainerFlowApp:
             # Start WebSocket server
             await self.websocket_server.start()
             logger.info("✅ WebSocket server started")
+            
+            # Start Web server
+            await self.web_server.start()
+            logger.info("✅ Web server started")
             
             self.running = True
             logger.info("🚀 ContainerFlow Visualizer is running")
@@ -97,6 +107,11 @@ class ContainerFlowApp:
         if self.websocket_server:
             await self.websocket_server.stop()
             logger.info("✅ WebSocket server stopped")
+        
+        # Stop Web server
+        if self.web_server:
+            await self.web_server.stop()
+            logger.info("✅ Web server stopped")
         
         logger.info("🛑 ContainerFlow Visualizer stopped")
     
@@ -126,6 +141,8 @@ async def main():
         'storage_path': 'storage',
         'websocket_host': '0.0.0.0',
         'websocket_port': 8765,
+        'web_host': '0.0.0.0',
+        'web_port': 8080,
     }
     
     # Create and start app

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Execution - StepFlow Monitor</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>StepFlow <span class="brand-subtitle">Monitor</span></h1>
+            </div>
+            <div class="nav-tabs">
+                <a href="/" class="nav-tab">Dashboard</a>
+                <a href="/execution" class="nav-tab active">Live Execution</a>
+                <a href="/history" class="nav-tab">History</a>
+                <a href="/artifacts" class="nav-tab">Artifacts</a>
+            </div>
+            <div class="connection-status" id="connectionStatus">
+                🟢 Connected
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h2>Live Execution Monitor</h2>
+                <p>Real-time monitoring of active script executions</p>
+            </div>
+
+            <!-- Active Executions List -->
+            <section class="active-executions">
+                <h3>Active Executions</h3>
+                <div id="activeExecutionsList" class="execution-list">
+                    <div class="loading">Loading active executions...</div>
+                </div>
+            </section>
+
+            <!-- Live Execution Details -->
+            <section class="execution-details" id="executionDetails" style="display: none;">
+                <h3>Execution Details</h3>
+                <div class="execution-header">
+                    <div class="execution-info">
+                        <h4 id="executionName">-</h4>
+                        <p id="executionCommand">-</p>
+                        <span class="execution-status" id="executionStatus">-</span>
+                    </div>
+                </div>
+
+                <!-- Steps Progress -->
+                <div class="steps-container">
+                    <h4>Execution Steps</h4>
+                    <div id="stepsProgress" class="steps-list">
+                        <!-- Steps will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Live Logs -->
+                <div class="logs-container">
+                    <h4>Live Logs</h4>
+                    <div id="liveLogs" class="logs-output">
+                        <!-- Logs will be streamed here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script>
+        class LiveExecutionMonitor {
+            constructor() {
+                this.selectedExecutionId = null;
+                this.refreshInterval = 2000; // 2 seconds
+                this.refreshTimer = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.loadActiveExecutions();
+                this.startAutoRefresh();
+                this.setupWebSocketListeners();
+                
+                // Check if there's an execution ID in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const executionId = urlParams.get('id');
+                if (executionId) {
+                    this.selectExecution(executionId);
+                }
+            }
+            
+            async loadActiveExecutions() {
+                try {
+                    const response = await API.getActiveExecutions();
+                    const executions = response.active_executions || [];
+                    
+                    const container = document.getElementById('activeExecutionsList');
+                    
+                    if (executions.length === 0) {
+                        container.innerHTML = '<div class="no-data">No active executions</div>';
+                        return;
+                    }
+                    
+                    container.innerHTML = executions.map(exec => `
+                        <div class="execution-item ${this.selectedExecutionId === exec.id ? 'selected' : ''}" 
+                             onclick="liveMonitor.selectExecution('${exec.id}')">
+                            <div class="execution-item-header">
+                                <span class="execution-name">${exec.name || exec.id}</span>
+                                <span class="execution-status status-${exec.status}">${exec.status}</span>
+                            </div>
+                            <div class="execution-command">${exec.command}</div>
+                            <div class="execution-time">Started: ${exec.start_time ? new Date(exec.start_time).toLocaleString() : 'N/A'}</div>
+                        </div>
+                    `).join('');
+                    
+                    // Auto-select first execution if none selected
+                    if (!this.selectedExecutionId && executions.length > 0) {
+                        this.selectExecution(executions[0].id);
+                    }
+                    
+                } catch (error) {
+                    console.error('Failed to load active executions:', error);
+                    document.getElementById('activeExecutionsList').innerHTML = 
+                        '<div class="error">Failed to load active executions</div>';
+                }
+            }
+            
+            async selectExecution(executionId) {
+                this.selectedExecutionId = executionId;
+                
+                // Update URL
+                const url = new URL(window.location);
+                url.searchParams.set('id', executionId);
+                window.history.replaceState({}, '', url);
+                
+                // Reload executions to update selection
+                await this.loadActiveExecutions();
+                
+                // Load execution details
+                await this.loadExecutionDetails(executionId);
+                
+                // Show details section
+                document.getElementById('executionDetails').style.display = 'block';
+            }
+            
+            async loadExecutionDetails(executionId) {
+                try {
+                    const execution = await API.getExecution(executionId);
+                    if (!execution) return;
+                    
+                    // Update execution info
+                    document.getElementById('executionName').textContent = execution.name || execution.id;
+                    document.getElementById('executionCommand').textContent = execution.command || '-';
+                    document.getElementById('executionStatus').textContent = execution.status || '-';
+                    document.getElementById('executionStatus').className = `execution-status status-${execution.status}`;
+                    
+                    // Load steps and logs
+                    await this.loadExecutionSteps(executionId);
+                    await this.loadExecutionLogs(executionId);
+                    
+                } catch (error) {
+                    console.error('Failed to load execution details:', error);
+                }
+            }
+            
+            async loadExecutionSteps(executionId) {
+                // This would load step information
+                const stepsContainer = document.getElementById('stepsProgress');
+                stepsContainer.innerHTML = '<div class="info">Step tracking will be displayed here</div>';
+            }
+            
+            async loadExecutionLogs(executionId) {
+                try {
+                    const logs = await API.getExecutionLogs(executionId);
+                    const logsContainer = document.getElementById('liveLogs');
+                    
+                    if (logs && logs.length > 0) {
+                        logsContainer.innerHTML = logs.map(log => 
+                            `<div class="log-entry">${log.timestamp}: ${log.message}</div>`
+                        ).join('');
+                    } else {
+                        logsContainer.innerHTML = '<div class="info">No logs available</div>';
+                    }
+                    
+                    // Auto-scroll to bottom
+                    logsContainer.scrollTop = logsContainer.scrollHeight;
+                    
+                } catch (error) {
+                    console.error('Failed to load execution logs:', error);
+                    document.getElementById('liveLogs').innerHTML = 
+                        '<div class="error">Failed to load logs</div>';
+                }
+            }
+            
+            startAutoRefresh() {
+                this.refreshTimer = setInterval(() => {
+                    this.loadActiveExecutions();
+                    if (this.selectedExecutionId) {
+                        this.loadExecutionDetails(this.selectedExecutionId);
+                    }
+                }, this.refreshInterval);
+            }
+            
+            setupWebSocketListeners() {
+                if (window.wsClient) {
+                    wsClient.on('connected', () => {
+                        document.getElementById('connectionStatus').innerHTML = '🟢 Connected';
+                        document.getElementById('connectionStatus').className = 'connection-status connected';
+                        this.loadActiveExecutions();
+                    });
+                    
+                    wsClient.on('disconnected', () => {
+                        document.getElementById('connectionStatus').innerHTML = '🔴 Disconnected';
+                        document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                    });
+                    
+                    wsClient.on('execution_update', (data) => {
+                        if (data.execution_id === this.selectedExecutionId) {
+                            this.loadExecutionDetails(this.selectedExecutionId);
+                        }
+                        this.loadActiveExecutions();
+                    });
+                }
+            }
+        }
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.liveMonitor = new LiveExecutionMonitor();
+        });
+    </script>
+</body>
+</html>

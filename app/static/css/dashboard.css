@@ -184,3 +184,291 @@ Dashboard-specific styles
         min-width: 120px;
     }
 }
+
+/* Live Execution and History Page Styles */
+.page-header {
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.page-header h2 {
+    margin: 0 0 var(--space-2) 0;
+    color: var(--gray-900);
+}
+
+.page-header p {
+    margin: 0;
+    color: var(--gray-600);
+}
+
+/* Execution List Styles */
+.execution-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.execution-item {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: var(--space-4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.execution-item:hover {
+    background: var(--gray-100);
+    border-color: var(--primary-color);
+}
+
+.execution-item.selected {
+    background: var(--primary-50);
+    border-color: var(--primary-color);
+}
+
+.execution-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.execution-name {
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.execution-command {
+    font-family: 'Courier New', monospace;
+    font-size: var(--font-size-sm);
+    color: var(--gray-700);
+    background: var(--gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: 4px;
+    margin-bottom: var(--space-2);
+}
+
+.execution-time {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+}
+
+/* Status Badges */
+.status-badge, .execution-status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-pending { background: var(--warning-50); color: var(--warning-700); }
+.status-running { background: var(--primary-50); color: var(--primary-700); }
+.status-completed { background: var(--success-50); color: var(--success-700); }
+.status-failed { background: var(--error-50); color: var(--error-700); }
+.status-cancelled { background: var(--gray-100); color: var(--gray-700); }
+
+/* Execution Details */
+.execution-details {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: var(--space-6);
+    margin-top: var(--space-6);
+}
+
+.execution-header {
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.execution-info h4 {
+    margin: 0 0 var(--space-2) 0;
+    color: var(--gray-900);
+}
+
+.execution-info p {
+    margin: 0 0 var(--space-3) 0;
+    font-family: 'Courier New', monospace;
+    color: var(--gray-700);
+}
+
+/* Steps and Logs */
+.steps-container, .logs-container {
+    margin-top: var(--space-6);
+}
+
+.steps-container h4, .logs-container h4 {
+    margin: 0 0 var(--space-4) 0;
+    color: var(--gray-900);
+}
+
+.steps-list {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: var(--space-4);
+    background: var(--gray-50);
+}
+
+.logs-output {
+    background: var(--gray-900);
+    color: var(--gray-100);
+    padding: var(--space-4);
+    border-radius: var(--border-radius);
+    font-family: 'Courier New', monospace;
+    font-size: var(--font-size-sm);
+    max-height: 400px;
+    overflow-y: auto;
+    line-height: 1.4;
+}
+
+.log-entry {
+    margin-bottom: var(--space-1);
+}
+
+/* History Page Styles */
+.filters {
+    background: var(--gray-50);
+    padding: var(--space-4);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-6);
+    display: flex;
+    gap: var(--space-4);
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.filter-group label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.filter-group select {
+    padding: var(--space-2);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    background: white;
+}
+
+/* Table Styles */
+.table-container {
+    overflow-x: auto;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+}
+
+.execution-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.execution-table th {
+    background: var(--gray-50);
+    padding: var(--space-3);
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-900);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.execution-table td {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.execution-table tr:hover {
+    background: var(--gray-50);
+}
+
+.command-cell {
+    font-family: 'Courier New', monospace;
+    font-size: var(--font-size-sm);
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Button Styles */
+.btn-sm {
+    padding: 4px 8px;
+    font-size: var(--font-size-xs);
+}
+
+.btn-danger {
+    background: var(--error-color);
+    color: white;
+    border: 1px solid var(--error-color);
+}
+
+.btn-danger:hover {
+    background: var(--error-600);
+    border-color: var(--error-600);
+}
+
+/* Modal Summary */
+.execution-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.summary-item label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.summary-item span {
+    font-size: var(--font-size-sm);
+    color: var(--gray-900);
+}
+
+/* Connection Status */
+.connection-status {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    background: var(--error-50);
+    color: var(--error-700);
+    border: 1px solid var(--error-200);
+}
+
+.connection-status.connected {
+    background: var(--success-50);
+    color: var(--success-700);
+    border-color: var(--success-200);
+}
+
+/* Utility Classes */
+.loading, .no-data, .info, .error {
+    text-align: center;
+    padding: var(--space-4);
+    color: var(--gray-600);
+    font-style: italic;
+}
+
+.error {
+    color: var(--error-600);
+}
