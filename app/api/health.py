@@ -120,3 +120,48 @@ class HealthAPI:
         except Exception as e:
             logger.error(f"Failed to get database stats: {e}")
             return {"error": str(e)}
+    
+    async def performance_metrics(self) -> Dict[str, Any]:
+        """Get detailed performance metrics"""
+        try:
+            # Get database performance stats
+            db_stats = await self.persistence.get_performance_stats()
+            
+            # Get system performance
+            system_stats = {
+                "cpu_percent": psutil.cpu_percent(interval=1),
+                "memory_percent": psutil.virtual_memory().percent,
+                "disk_usage_percent": psutil.disk_usage('/').percent,
+                "open_connections": len(self.websocket_server.connected_clients) if self.websocket_server else 0
+            }
+            
+            # Combine all metrics
+            metrics = {
+                "timestamp": datetime.now().isoformat(),
+                "database": db_stats,
+                "system": system_stats,
+                "uptime_seconds": (datetime.now() - self.start_time).total_seconds()
+            }
+            
+            return metrics
+        except Exception as e:
+            logger.error(f"Failed to get performance metrics: {e}")
+            return {"error": str(e)}
+    
+    async def optimize_performance(self) -> Dict[str, Any]:
+        """Run performance optimization tasks"""
+        try:
+            # Run database optimization
+            await self.persistence.optimize_database()
+            
+            # Get updated metrics
+            metrics = await self.performance_metrics()
+            
+            return {
+                "status": "optimization_completed",
+                "timestamp": datetime.now().isoformat(),
+                "metrics": metrics
+            }
+        except Exception as e:
+            logger.error(f"Failed to optimize performance: {e}")
+            return {"error": str(e)}

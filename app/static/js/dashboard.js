@@ -87,19 +87,52 @@ class Dashboard {
         const tbody = document.getElementById('recentExecutionsBody');
         if (!tbody) return;
         
-        if (executions.length === 0) {
+        if (!executions || executions.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="text-center">No executions found</td></tr>';
             return;
         }
         
+        // CACHE BUSTER: Version 2025-08-02-16:15 - FIXED DATA STRUCTURE
+        console.log('🚀 Dashboard.js loaded - Version 2025-08-02-16:15');
+        console.log('📊 Dashboard receives executions array:', executions);
+        console.log('📊 First execution:', executions[0]);
+        
         tbody.innerHTML = executions.map(execution => {
-            // Calculate duration from start_time and end_time
+            console.log('🔧 Processing execution:', execution.name);
+            
+            // Use duration_seconds directly from API if available
             let duration = '-';
-            if (execution.start_time) {
-                const startTime = new Date(execution.start_time);
-                const endTime = execution.end_time ? new Date(execution.end_time) : new Date();
-                const durationSeconds = (endTime - startTime) / 1000;
-                duration = Formatters.duration(durationSeconds);
+            if (execution.duration_seconds && execution.duration_seconds > 0) {
+                const seconds = execution.duration_seconds;
+                if (seconds < 60) {
+                    duration = `${Math.round(seconds)}s`;
+                } else if (seconds < 3600) {
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = Math.floor(seconds % 60);
+                    duration = `${minutes}m ${remainingSeconds}s`;
+                } else {
+                    const hours = Math.floor(seconds / 3600);
+                    const minutes = Math.floor((seconds % 3600) / 60);
+                    duration = `${hours}h ${minutes}m`;
+                }
+                console.log(`⏱️ Duration for ${execution.name}: ${duration} (${seconds}s)`);
+            }
+            
+            // Format started time
+            let startedDisplay = '-';
+            if (execution.started_at) {
+                const date = new Date(execution.started_at);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                if (diffHours < 1) {
+                    startedDisplay = 'Just now';
+                } else if (diffHours < 24) {
+                    startedDisplay = `${diffHours}h ago`;
+                } else {
+                    startedDisplay = date.toLocaleDateString();
+                }
+                console.log(`🕐 Started for ${execution.name}: ${startedDisplay}`);
             }
             
             return `
@@ -108,9 +141,9 @@ class Dashboard {
                     <div class="execution-name">${execution.name || 'Unnamed'}</div>
                     <div class="execution-command">${execution.command}</div>
                 </td>
-                <td>${Formatters.statusBadge(execution.status)}</td>
+                <td>${window.Formatters ? window.Formatters.statusBadge(execution.status) : execution.status}</td>
                 <td>${duration}</td>
-                <td>${Formatters.timestamp(execution.start_time)}</td>
+                <td>${startedDisplay}</td>
                 <td onclick="event.stopPropagation()">
                     <div class="execution-actions">
                         <button onclick="viewExecution('${execution.id}')" class="btn btn-sm btn-secondary">

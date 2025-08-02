@@ -135,19 +135,21 @@
             
             async loadExecutionDetails(executionId) {
                 try {
-                    const execution = await API.getExecution(executionId);
-                    if (!execution) return;
+                    const response = await API.getExecution(executionId);
+                    if (!response || !response.execution) return;
+                    
+                    const execution = response.execution; // API returns {execution: {...}, steps: [...], artifacts: [...]}
                     
                     // Update execution info
-                    document.getElementById('executionName').textContent = execution.name || execution.id;
+                    document.getElementById('executionName').textContent = execution.name || execution.id || '-';
                     document.getElementById('executionCommand').textContent = execution.command || '-';
                     document.getElementById('executionStatus').textContent = execution.status || '-';
                     document.getElementById('executionStatus').className = `execution-status status-${execution.status}`;
                     
-                    // Update execution metadata
-                    const startTime = execution.start_time ? new Date(execution.start_time).toLocaleString() : '-';
-                    const endTime = execution.end_time ? new Date(execution.end_time).toLocaleString() : '-';
-                    const duration = this.calculateDuration(execution.start_time, execution.end_time);
+                    // Update execution metadata with correct field names
+                    const startTime = execution.started_at ? new Date(execution.started_at).toLocaleString() : '-';
+                    const endTime = execution.completed_at ? new Date(execution.completed_at).toLocaleString() : '-';
+                    const duration = this.calculateDuration(execution.started_at, execution.completed_at);
                     
                     document.getElementById('executionStartTime').textContent = startTime;
                     document.getElementById('executionEndTime').textContent = endTime;
@@ -225,36 +227,77 @@
             }
             
             async getExecutionSteps(executionId) {
-                // Simulate step data - this would come from your marker parser
-                return [
-                    {
-                        name: 'Environment Setup',
-                        status: 'completed',
-                        duration: '30s',
-                        output: '[2025-08-01 22:30:15.123] Installing dependencies...\n[2025-08-01 22:30:18.456] Resolving package dependencies\n[2025-08-01 22:30:25.789] Setting up environment variables...\n[2025-08-01 22:30:30.012] Configuring runtime paths\n[2025-08-01 22:30:45.345] ✅ Environment ready'
-                    },
-                    {
-                        name: 'Data Processing',
-                        status: 'failed',
-                        duration: '15s',
-                        output: '[2025-08-01 22:30:46.678] Loading data files...\n[2025-08-01 22:30:48.901] Reading configuration file\n[2025-08-01 22:30:50.234] Processing records...\n[2025-08-01 22:30:55.567] Validating data format\n[2025-08-01 22:31:01.890] ❌ Error: File not found - data.csv'
-                    },
-                    {
-                        name: 'Model Training',
-                        status: 'pending',
-                        duration: '',
-                        output: ''
+                try {
+                    // Get real execution data from API
+                    const response = await API.getExecution(executionId);
+                    if (!response || !response.steps) {
+                        console.error('No steps data found for execution:', executionId);
+                        return [];
                     }
-                ];
+                    
+                    // Convert API step data to frontend format
+                    return response.steps.map(step => {
+                        // Calculate duration if available
+                        let duration = '';
+                        if (step.duration_seconds) {
+                            if (step.duration_seconds < 60) {
+                                duration = `${Math.round(step.duration_seconds)}s`;
+                            } else if (step.duration_seconds < 3600) {
+                                duration = `${Math.round(step.duration_seconds / 60)}m ${Math.round(step.duration_seconds % 60)}s`;
+                            } else {
+                                duration = `${Math.round(step.duration_seconds / 3600)}h ${Math.round((step.duration_seconds % 3600) / 60)}m`;
+                            }
+                        }
+                        
+                        // Format logs as output text
+                        let output = '';
+                        if (step.logs && step.logs.length > 0) {
+                            output = step.logs.map(log => {
+                                const timestamp = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : '';
+                                return `[${timestamp}] ${log.content}`;
+                            }).join('\n');
+                        } else {
+                            output = 'No logs available for this step';
+                        }
+                        
+                        return {
+                            name: step.name,
+                            status: step.status,
+                            duration: duration,
+                            output: output,
+                            index: step.index,
+                            id: step.id
+                        };
+                    });
+                } catch (error) {
+                    console.error('Failed to load execution steps:', error);
+                    // Fallback to empty array rather than hardcoded data
+                    return [];
+                }
             }
             
             async loadExecutionArtifacts(executionId) {
                 try {
-                    // Get execution details to collect output
-                    const execution = await API.getExecution(executionId);
-                    if (!execution) return;
+                    // Get execution details from API
+                    const response = await API.getExecution(executionId);
+                    if (!response) return;
                     
                     const artifacts = [];
+                    
+                    // Add real artifacts from API
+                    if (response.artifacts && response.artifacts.length > 0) {
+                        response.artifacts.forEach(artifact => {
+                            artifacts.push({
+                                name: artifact.name || artifact.file_name || 'Unknown Artifact',
+                                type: artifact.artifact_type || 'file',
+                                size: artifact.file_size ? this.formatBytes(artifact.file_size) : 'Unknown',
+                                description: artifact.description || 'Execution artifact',
+                                downloadable: true,
+                                path: artifact.file_path || '',
+                                id: artifact.id
+                            });
+                        });
+                    }
                     
                     // Always include full output as an artifact with step names
                     const steps = await this.getExecutionSteps(executionId);
@@ -263,18 +306,16 @@
                         return `=== STEP: ${step.name} ===\n${step.output}\n`;
                     }).filter(output => output).join('\n');
                     
-                    artifacts.push({
-                        name: 'Full Execution Output',
-                        type: 'output',
-                        size: this.formatBytes(fullOutput.length),
-                        description: 'Complete output logs from all execution steps',
-                        downloadable: true,
-                        content: fullOutput
-                    });
-                    
-                    // Check for additional artifacts (simulated for now)
-                    const additionalArtifacts = await this.getAdditionalArtifacts(executionId);
-                    artifacts.push(...additionalArtifacts);
+                    if (fullOutput.trim()) {
+                        artifacts.push({
+                            name: 'Full Execution Output',
+                            type: 'output',
+                            size: this.formatBytes(fullOutput.length),
+                            description: 'Complete output logs from all execution steps',
+                            downloadable: true,
+                            content: fullOutput
+                        });
+                    }
                     
                     this.renderArtifacts(artifacts);
                     
@@ -285,28 +326,7 @@
                 }
             }
             
-            async getAdditionalArtifacts(executionId) {
-                // Simulate additional artifacts like pytest XML files
-                // In real implementation, this would check the filesystem for declared artifacts
-                return [
-                    {
-                        name: 'pytest-results.xml',
-                        type: 'file',
-                        size: '2.4 KB',
-                        description: 'Pytest test results in XML format',
-                        downloadable: true,
-                        path: '/artifacts/pytest-results.xml'
-                    },
-                    {
-                        name: 'coverage-report.html',
-                        type: 'file',
-                        size: '45.2 KB',
-                        description: 'Code coverage report',
-                        downloadable: true,
-                        path: '/artifacts/coverage-report.html'
-                    }
-                ];
-            }
+
             
             renderArtifacts(artifacts) {
                 const container = document.getElementById('artifactsList');

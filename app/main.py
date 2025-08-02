@@ -115,6 +115,11 @@ class StepFlowApp:
             await self.web_server.stop()
             logger.info("✅ Web server stopped")
         
+        # Close database connection
+        if self.persistence:
+            await self.persistence.close()
+            logger.info("✅ Database connection closed")
+        
         logger.info("🛑 StepFlow Monitor stopped")
     
     def _signal_handler(self, signum, frame):

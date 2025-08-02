@@ -155,13 +155,39 @@
                         return;
                     }
                     
+                    // CACHE BUSTER: Version 2025-08-02-16:10 
+                    console.log('🚀 History.js loaded - Version 2025-08-02-16:10');
+                    console.log('📊 Processing history executions:', executions);
+                    
                     tableBody.innerHTML = executions
                         .filter(exec => !this.currentFilters.status || exec.status === this.currentFilters.status)
                         .map(exec => {
-                            const startTime = exec.start_time ? new Date(exec.start_time) : null;
-                            const endTime = exec.end_time ? new Date(exec.end_time) : null;
-                            const duration = startTime && endTime ? 
-                                this.formatDuration(endTime - startTime) : '-';
+                            console.log('🔧 Processing history execution:', exec.name);
+                            
+                            // Use correct field names: started_at and completed_at
+                            const startTime = exec.started_at ? new Date(exec.started_at) : null;
+                            const endTime = exec.completed_at ? new Date(exec.completed_at) : null;
+                            
+                            // Use duration_seconds from API if available
+                            let duration = '-';
+                            if (exec.duration_seconds && exec.duration_seconds > 0) {
+                                const seconds = exec.duration_seconds;
+                                if (seconds < 60) {
+                                    duration = `${Math.round(seconds)}s`;
+                                } else if (seconds < 3600) {
+                                    const minutes = Math.floor(seconds / 60);
+                                    const remainingSeconds = Math.floor(seconds % 60);
+                                    duration = `${minutes}m ${remainingSeconds}s`;
+                                } else {
+                                    const hours = Math.floor(seconds / 3600);
+                                    const minutes = Math.floor((seconds % 3600) / 60);
+                                    duration = `${hours}h ${minutes}m`;
+                                }
+                                console.log(`⏱️ History duration for ${exec.name}: ${duration} (${seconds}s)`);
+                            } else if (startTime && endTime) {
+                                // Fallback to calculation
+                                duration = this.formatDuration(endTime - startTime);
+                            }
                             
                             return `
                                 <tr>

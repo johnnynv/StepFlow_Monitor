@@ -34,7 +34,19 @@ class ParsedMarker:
     def step_name(self) -> Optional[str]:
         """Get step name for step-related markers"""
         if self.marker_type in [MarkerType.STEP_START, MarkerType.STEP_COMPLETE, MarkerType.STEP_ERROR]:
-            return self.content
+            # Extract step name before any parameters
+            # e.g., "environment_check[stop_on_error=true]" -> "environment_check"
+            step_name = self.content
+            # Remove bracket parameters
+            if '[' in step_name:
+                step_name = step_name.split('[')[0]
+            # Remove brace parameters  
+            if '{' in step_name:
+                step_name = step_name.split('{')[0]
+            # Remove command-line style parameters
+            if ' --' in step_name:
+                step_name = step_name.split(' --')[0]
+            return step_name.strip()
         return None
     
     @property

@@ -10,6 +10,8 @@ StepFlow Monitor uses **minimal markers** that you add to your existing scripts 
 
 ### Step Control Markers
 - `STEP_START:Name` - Marks the beginning of a step
+- `STEP_START:Name[stop_on_error=true]` - Critical step that stops execution on failure
+- `STEP_START:Name[stop_on_error=false]` - Optional step that continues execution on failure
 - `STEP_COMPLETE:Name` - Marks successful completion
 - `STEP_ERROR:Description` - Marks step failure
 
@@ -18,6 +20,49 @@ StepFlow Monitor uses **minimal markers** that you add to your existing scripts 
 
 ### Metadata Markers
 - `META:key:value` - Provides additional step metadata
+
+## 🎯 Failure Control Examples
+
+### Critical vs Optional Steps
+```python
+#!/usr/bin/env python3
+
+# Critical step - execution stops if this fails
+print("STEP_START:database_setup[stop_on_error=true]")
+setup_database()  # If this fails, no further steps run
+print("STEP_COMPLETE:database_setup")
+
+# Optional step - execution continues even if this fails  
+print("STEP_START:cache_warming[stop_on_error=false]")
+try:
+    warm_cache()  # If this fails, execution continues
+    print("STEP_COMPLETE:cache_warming")
+except Exception as e:
+    print(f"STEP_ERROR:Cache warming failed: {e}")
+
+# This step will run regardless of cache_warming failure
+print("STEP_START:final_validation[stop_on_error=true]")
+validate_system()
+print("STEP_COMPLETE:final_validation")
+```
+
+### Shell Script Example
+```bash
+#!/bin/bash
+
+# Critical environment check
+echo "STEP_START:env_check[stop_on_error=true]"
+if ! command -v python3 &> /dev/null; then
+    echo "STEP_ERROR:Python3 not found"
+    exit 1  # Execution stops here
+fi
+echo "STEP_COMPLETE:env_check"
+
+# Optional notification
+echo "STEP_START:notify_start[stop_on_error=false]"
+curl -X POST webhook_url || echo "STEP_ERROR:Notification failed - continuing"
+echo "STEP_COMPLETE:notify_start"
+```
 
 ## 🚀 Running Examples
 

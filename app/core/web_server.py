@@ -128,79 +128,53 @@ class WebServer:
         })
     
     async def get_executions(self, request):
-        """Get list of executions (both active and from database)"""
+        """Get list of executions with filtering and pagination"""
         try:
-            executions = []
+            # Parse query parameters
+            limit = int(request.query.get('limit', '50'))
+            offset = int(request.query.get('offset', '0'))
+            status_filter = request.query.get('status')
+            user_filter = request.query.get('user')
             
-            if self.execution_engine:
-                # Add active executions (in-memory)
-                for exec_id, execution in self.execution_engine.active_executions.items():
-                    executions.append({
-                        "id": execution.id,
-                        "status": execution.status.value,
-                        "name": execution.name,
-                        "start_time": execution.started_at.isoformat() if execution.started_at else None,
-                        "end_time": execution.completed_at.isoformat() if execution.completed_at else None,
-                        "command": execution.command,
-                        "created_at": execution.created_at.isoformat() if execution.created_at else None
-                    })
+            # Convert status string to enum if provided
+            status_enum = None
+            if status_filter:
+                from ..models.execution import ExecutionStatus
+                try:
+                    status_enum = ExecutionStatus(status_filter)
+                except ValueError:
+                    return web.json_response({
+                        "error": f"Invalid status: {status_filter}"
+                    }, status=400)
+            
+            # Use executions API if available
+            if self.executions_api:
+                query_params = {
+                    'limit': limit,
+                    'offset': offset,
+                    'status': status_filter,
+                    'user': user_filter
+                }
+                result = await self.executions_api.get_executions(query_params)
+                return web.json_response(result)
+            
+            # Fallback: direct persistence access
+            elif self.persistence:
+                logger.info(f"Fetching {limit} executions from database...")
+                executions = await self.persistence.get_executions(
+                    limit=limit,
+                    offset=offset,
+                    status=status_enum,
+                    user=user_filter
+                )
+                logger.info(f"Found {len(executions)} executions in database")
                 
-                # Add completed executions from memory (recent)
-                for exec_id, execution in self.execution_engine.completed_executions.items():
-                    executions.append({
-                        "id": execution.id,
-                        "status": execution.status.value,
-                        "name": execution.name,
-                        "start_time": execution.started_at.isoformat() if execution.started_at else None,
-                        "end_time": execution.completed_at.isoformat() if execution.completed_at else None,
-                        "command": execution.command,
-                        "created_at": execution.created_at.isoformat() if execution.created_at else None
-                    })
-                
-                # Get historical executions from database
-                if hasattr(self.execution_engine, 'persistence') and self.execution_engine.persistence:
-                    try:
-                        # Get limit parameter
-                        limit = request.query.get('limit', '50')
-                        try:
-                            limit = int(limit)
-                        except ValueError:
-                            limit = 50
-                        
-                        logger.info(f"Fetching {limit} executions from database...")
-                        db_executions = await self.execution_engine.persistence.get_executions(limit=limit)
-                        logger.info(f"Found {len(db_executions)} executions in database")
-                        
-                        for execution in db_executions:
-                            # Avoid duplicates with active/completed executions
-                            if not any(e['id'] == execution.id for e in executions):
-                                executions.append({
-                                    "id": execution.id,
-                                    "status": execution.status.value,
-                                    "name": execution.name,
-                                    "start_time": execution.started_at.isoformat() if execution.started_at else None,
-                                    "end_time": execution.completed_at.isoformat() if execution.completed_at else None,
-                                    "command": execution.command,
-                                    "created_at": execution.created_at.isoformat() if execution.created_at else None
-                                })
-                    except Exception as db_error:
-                        logger.error(f"Failed to fetch from database: {db_error}")
-                        import traceback
-                        logger.error(f"Database error details: {traceback.format_exc()}")
-                
-                # Sort by creation time (newest first)
-                executions.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-                
-                # Apply limit
-                limit = request.query.get('limit')
-                if limit:
-                    try:
-                        limit = int(limit)
-                        executions = executions[:limit]
-                    except ValueError:
-                        pass
-
-                return web.json_response({"executions": executions})
+                return web.json_response({
+                    "executions": [execution.to_dict() for execution in executions],
+                    "limit": limit,
+                    "offset": offset,
+                    "count": len(executions)
+                })
             else:
                 # Fallback to mock data
                 return web.json_response({
@@ -319,8 +293,8 @@ class WebServer:
                         failed = len([ex for ex in executions if ex.status.value == "failed"])
                         success_rate = (completed / total_executions) * 100
                         
-                        # Calculate average duration for completed executions
-                        durations = [ex.duration_seconds for ex in executions if ex.duration_seconds and ex.status.value == "completed"]
+                        # Calculate average duration for completed executions only (exclude running ones with inflated duration)
+                        durations = [ex.duration_seconds for ex in executions if ex.duration_seconds and ex.status.value == "completed" and ex.completed_at is not None]
                         avg_duration = sum(durations) / len(durations) if durations else 0
                     else:
                         success_rate = 0
@@ -348,50 +322,47 @@ class WebServer:
             return web.json_response({"error": str(e)}, status=500)
     
     async def get_execution(self, request):
-        """Get details of a specific execution"""
+        """Get details of a specific execution with steps and artifacts"""
         try:
             execution_id = request.match_info['execution_id']
             
-            if self.execution_engine:
-                # Look for the execution in active executions first
-                execution = self.execution_engine.active_executions.get(execution_id)
-                
-                # If not found in active, check completed executions
-                if not execution:
-                    execution = self.execution_engine.completed_executions.get(execution_id)
-                
-                # If still not found, try database
-                if not execution and hasattr(self.execution_engine, 'persistence') and self.execution_engine.persistence:
-                    try:
-                        execution = await self.execution_engine.persistence.get_execution(execution_id)
-                    except Exception as db_error:
-                        logger.warning(f"Failed to fetch execution from database: {db_error}")
-                
-                if execution:
+            # Use executions API if available
+            if self.executions_api:
+                result = await self.executions_api.get_execution(execution_id)
+                return web.json_response(result)
+            
+            # Fallback: direct persistence access
+            elif self.persistence:
+                try:
+                    execution = await self.persistence.get_execution(execution_id)
+                    if not execution:
+                        return web.json_response({"error": "Execution not found"}, status=404)
+                    
+                    # Get steps and artifacts
+                    steps = await self.persistence.get_steps(execution_id)
+                    artifacts = await self.persistence.get_artifacts(execution_id)
+                    
                     return web.json_response({
-                        "id": execution.id,
-                        "name": execution.name,
-                        "command": execution.command,
-                        "status": execution.status.value,
-                        "start_time": execution.started_at.isoformat() if execution.started_at else None,
-                        "end_time": execution.completed_at.isoformat() if execution.completed_at else None,
-                        "created_at": execution.created_at.isoformat() if execution.created_at else None,
-                        "working_directory": execution.working_directory,
-                        "environment": execution.environment,
-                        "total_steps": execution.total_steps,
-                        "completed_steps": execution.completed_steps
+                        "execution": execution.to_dict(),
+                        "steps": [step.to_dict() for step in steps],
+                        "artifacts": [artifact.to_dict() for artifact in artifacts]
                     })
-                else:
-                    return web.json_response({"error": "Execution not found"}, status=404)
+                except Exception as e:
+                    logger.error(f"Failed to get execution from database: {e}")
+                    return web.json_response({"error": str(e)}, status=500)
             else:
                 # Fallback to mock data
                 return web.json_response({
-                    "id": execution_id,
-                    "name": "Mock Execution",
-                    "command": "echo 'mock'",
-                    "status": "completed",
-                    "start_time": "2025-08-01T18:00:00Z",
-                    "end_time": "2025-08-01T18:00:05Z"
+                    "execution": {
+                        "id": execution_id,
+                        "name": "Mock Execution",
+                        "command": "echo 'mock'",
+                        "status": "completed",
+                        "start_time": "2025-08-01T18:00:00Z",
+                        "end_time": "2025-08-01T18:00:05Z"
+                    },
+                    "steps": [],
+                    "artifacts": []
                 })
                 
         except Exception as e:

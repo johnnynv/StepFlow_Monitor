@@ -170,6 +170,13 @@ class ExecutionEngine:
             if current_step and not current_step.is_finished:
                 current_step.complete(exit_code)
                 await self._notify_step_update(execution, current_step)
+                
+                # Check if step failed due to exit code and should stop execution
+                if exit_code != 0 and current_step.stop_on_error:
+                    logger.error(f"Critical step failed with exit code {exit_code}, stopping execution: {current_step.name}")
+                    execution.fail(f"Critical step failed with exit code {exit_code}: {current_step.name}")
+                    await self._notify_execution_update(execution)
+                    return
             
             # Complete execution
             execution.complete(exit_code)
@@ -241,7 +248,8 @@ class ExecutionEngine:
             execution_id=execution.id,
             name=marker.step_name,
             index=execution.total_steps,
-            estimated_duration=marker.parameters.get('duration')
+            estimated_duration=marker.parameters.get('duration'),
+            stop_on_error=marker.parameters.get('stop_on_error', False)
         )
         
         # Apply metadata from parameters
@@ -299,6 +307,20 @@ class ExecutionEngine:
             await self._notify_step_update(execution, current_step)
             
             logger.error(f"Step failed: {current_step.name} - {marker.content}")
+            
+            # Check if we should stop execution on this step failure
+            if current_step.stop_on_error:
+                logger.error(f"Critical step failed, stopping execution: {current_step.name}")
+                execution.fail(f"Critical step failed: {current_step.name} - {marker.content}")
+                await self._notify_execution_update(execution)
+                
+                # Terminate the running process
+                if execution.id in self.active_processes:
+                    process = self.active_processes[execution.id]
+                    await self._terminate_process(process)
+                
+                return None
+            
             return None  # No current step
         else:
             logger.warning(f"STEP_ERROR without active step: {marker.content}")

@@ -56,6 +56,9 @@ class Step:
     exit_code: Optional[int] = None
     error_message: Optional[str] = None
     
+    # Failure Control
+    stop_on_error: bool = False
+    
     # Timing
     created_at: datetime = field(default_factory=datetime.now)
     started_at: Optional[datetime] = None
@@ -150,6 +153,7 @@ class Step:
             exit_code=data.get('exit_code'),
             error_message=data.get('error_message'),
             estimated_duration=data.get('estimated_duration'),
+            stop_on_error=data.get('stop_on_error', False),
             metadata=data.get('metadata', {})
         )
         

@@ -1,4 +1,4 @@
-# StepFlow Monitor Dockerfile
+# StepFlow Monitor - Production Ready Container
 FROM python:3.11-slim
 
 # Set working directory
@@ -6,28 +6,46 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    gcc \
+    sqlite3 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy requirements first for better layer caching
 COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash appuser
-
 # Copy application code
-COPY . .
+COPY app/ ./app/
+COPY generate_complete_test_data.py .
+COPY demo_script.py .
 
-# Create storage directories
-RUN mkdir -p storage/{executions,artifacts,database} && \
-    chown -R appuser:appuser /app
+# Create necessary directories
+RUN mkdir -p storage/database storage/executions storage/artifacts
 
-# Switch to non-root user
-USER appuser
+# Create startup script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "🚀 Starting StepFlow Monitor..."\n\
+echo "📋 Current directory: $(pwd)"\n\
+echo "📋 Files in app/: $(ls -la app/)"\n\
+\n\
+# Initialize database and generate test data if not exists\n\
+if [ ! -f "storage/database/stepflow.db" ]; then\n\
+    echo "📊 Database not found, generating test data..."\n\
+    PYTHONPATH=. python generate_complete_test_data.py\n\
+    echo "✅ Test data generated successfully"\n\
+else\n\
+    echo "✅ Database already exists, skipping test data generation"\n\
+fi\n\
+\n\
+# Start the application\n\
+echo "🎯 Starting StepFlow Monitor application..."\n\
+exec PYTHONPATH=. python app/main.py\n\
+' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose ports
 EXPOSE 8080 8765
@@ -36,5 +54,5 @@ EXPOSE 8080 8765
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/api/health || exit 1
 
-# Default command
-CMD ["python", "app/main.py"]
+# Start the application
+CMD ["/app/start.sh"]

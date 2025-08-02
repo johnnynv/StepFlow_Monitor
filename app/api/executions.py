@@ -212,8 +212,8 @@ class ExecutionsAPI:
                     status = execution.status.value
                     stats["status_breakdown"][status] = stats["status_breakdown"].get(status, 0) + 1
                     
-                    # Duration and success rate
-                    if execution.duration_seconds:
+                    # Duration and success rate (only for completed executions to avoid inflated values)
+                    if execution.duration_seconds and execution.status == ExecutionStatus.COMPLETED and execution.completed_at:
                         durations.append(execution.duration_seconds)
                     
                     if execution.status == ExecutionStatus.COMPLETED:
