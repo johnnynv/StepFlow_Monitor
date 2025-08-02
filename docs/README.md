@@ -12,7 +12,7 @@ Detailed guides on the SQLite WAL optimization implementation that delivered 25-
 | Document | Language | Description |
 |----------|----------|-------------|
 | [Performance Optimization Guide](performance/optimization-guide.md) | English | Complete optimization strategy and implementation details |
-| [性能优化指南](performance/optimization-guide-cn.md) | 中文 | 完整的优化策略和实现细节 |
+| [Performance Optimization Guide (Chinese)](performance/optimization-guide-cn.md) | Chinese | Complete optimization strategy and implementation details |
 
 ### 🔧 Technical Implementation
 Deep-dive technical documentation covering the SQLite WAL implementation architecture.
@@ -20,7 +20,7 @@ Deep-dive technical documentation covering the SQLite WAL implementation archite
 | Document | Language | Description |
 |----------|----------|-------------|
 | [SQLite WAL Implementation](technical/sqlite-wal-implementation.md) | English | Technical deep-dive into WAL mode implementation |
-| [SQLite WAL 实现](technical/sqlite-wal-implementation-cn.md) | 中文 | WAL模式实现的技术深度解析 |
+| [SQLite WAL Implementation (Chinese)](technical/sqlite-wal-implementation-cn.md) | Chinese | Technical deep-dive into WAL mode implementation |
 
 ### 📊 Benchmark Results
 Comprehensive performance testing results and analysis demonstrating optimization effectiveness.
@@ -28,7 +28,7 @@ Comprehensive performance testing results and analysis demonstrating optimizatio
 | Document | Language | Description |
 |----------|----------|-------------|
 | [Performance Benchmark Results](benchmarks/performance-results.md) | English | Detailed benchmark analysis and metrics |
-| [性能基准测试结果](benchmarks/performance-results-cn.md) | 中文 | 详细基准分析和指标 |
+| [Performance Benchmark Results (Chinese)](benchmarks/performance-results-cn.md) | Chinese | Detailed benchmark analysis and metrics |
 
 ### 🚀 Migration & Deployment
 Step-by-step guides for migrating existing installations and deploying optimized instances.
@@ -36,7 +36,7 @@ Step-by-step guides for migrating existing installations and deploying optimized
 | Document | Language | Description |
 |----------|----------|-------------|
 | [Migration & Deployment Guide](guides/migration-deployment.md) | English | Complete migration and deployment instructions |
-| [迁移和部署指南](guides/migration-deployment-cn.md) | 中文 | 完整的迁移和部署说明 |
+| [Migration & Deployment Guide (Chinese)](guides/migration-deployment-cn.md) | Chinese | Complete migration and deployment instructions |
 
 ### 🏗️ Architecture & API Documentation
 Essential system architecture and API reference documentation.
@@ -119,11 +119,11 @@ Essential system architecture and API reference documentation.
 - 🏗️ [System Architecture](technical/ARCHITECTURE.md)
 - 📡 [API Reference](API_REFERENCE.md)
 
-#### 中文文档
-- 🚀 [性能优化指南](performance/optimization-guide-cn.md)
-- 🔧 [SQLite WAL 实现](technical/sqlite-wal-implementation-cn.md)
-- 📊 [性能基准测试结果](benchmarks/performance-results-cn.md)
-- 🚀 [迁移和部署指南](guides/migration-deployment-cn.md)
+#### Chinese Documentation
+- 🚀 [Performance Optimization Guide (Chinese)](performance/optimization-guide-cn.md)
+- 🔧 [SQLite WAL Implementation (Chinese)](technical/sqlite-wal-implementation-cn.md)
+- 📊 [Performance Benchmark Results (Chinese)](benchmarks/performance-results-cn.md)
+- 🚀 [Migration & Deployment Guide (Chinese)](guides/migration-deployment-cn.md)
 
 ## 🎯 Use Cases
 
@@ -193,7 +193,7 @@ Essential system architecture and API reference documentation.
 - **Total Documents**: 8 (4 English + 4 Chinese)
 - **Total Pages**: ~150 pages of comprehensive documentation
 - **Topics Covered**: Performance, Implementation, Testing, Deployment
-- **Languages**: English and Chinese (中文)
+- **Languages**: English and Chinese
 
 ### Quality Assurance
 - ✅ **Technical Accuracy**: All code examples tested

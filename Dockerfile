@@ -44,7 +44,8 @@ fi\n\
 \n\
 # Start the application\n\
 echo "🎯 Starting StepFlow Monitor application..."\n\
-exec PYTHONPATH=. python app/main.py\n\
+export PYTHONPATH=.\n\
+exec python app/main.py\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose ports
